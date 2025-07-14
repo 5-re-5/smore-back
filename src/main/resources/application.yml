@@ -1,0 +1,47 @@
+spring:
+  application:
+    name: smore
+  # ?? ?? ???? ?? (??? dev ???? ??)
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE:dev}
+  config:
+    import: optional:file:.env[.properties]
+---
+
+# ??? ??
+spring:
+  config:
+    activate:
+      on-profile: dev
+
+  datasource:
+    url: jdbc:mysql://${DEV_DB_HOST:localhost}:${DEV_DB_PORT:3306}/${DEV_DB_NAME}?useSSL=true&serverTimezone=Asia/Seoul&characterEncoding=UTF-8
+    username: ${DEV_DB_USERNAME}
+    password: ${DEV_DB_PASSWORD}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: validate    # ?? ????? validate ?? none ??
+    show-sql: false
+    database-platform: org.hibernate.dialect.MySQL8Dialect
+
+---
+
+# ??(Production)? ??
+spring:
+  config:
+    activate:
+      on-profile: prod
+
+  datasource:
+    url: jdbc:mysql://${PROD_DB_HOST:localhost}:${PROD_DB_PORT:3306}/${PROD_DB_NAME}?useSSL=true&serverTimezone=Asia/Seoul&characterEncoding=UTF-8
+    username: ${PROD_DB_USERNAME}
+    password: ${PROD_DB_PASSWORD}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: validate    # ?? ????? validate ?? none ??
+    show-sql: false
+    database-platform: org.hibernate.dialect.MySQL8Dialect
