@@ -1,0 +1,58 @@
+name: Mirror smore-back (full history) into GitLab/backend
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  mirror:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout smore-back full history
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Set Git author info
+        run: |
+          git config user.name "${{ github.actor }}"
+          git config user.email "${{ github.actor }}@naver.com"
+
+      - name: Install git-filter-repo
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y python3-pip
+          pip install git-filter-repo
+
+      - name: Rewrite smore-back history into backend/ subdir
+        run: |
+          git filter-repo --to-subdirectory-filter backend
+
+      - name: Merge backend/ history into GitLab main branch
+        run: |
+          # SSAFY GitLab 레포를 target-repo 폴더로 클론
+          git clone \
+            https://oauth2:${{ secrets.GITLAB_TOKEN }}@lab.ssafy.com/s13-webmobile1-sub1/S13P11A505.git \
+            target-repo
+          cd target-repo
+          git checkout main
+
+          # 커밋 작성자 설정
+          git config user.name "${{ github.actor }}"
+          git config user.email "${{ github.actor }}@naver.com"
+
+          # 필터링된 backend 히스토리를 담고 있는 원본 레포를 backend-source로 추가
+          git remote add backend-source ../
+          git fetch backend-source
+
+          # 서로 다른 히스토리 머지 허용하며, backend/ 디렉터리에 병합
+          git merge backend-source/main --allow-unrelated-histories \
+            -m "Merge smore-back → backend/ by ${{ github.actor }}"
+
+          # 변경사항 푸시
+          git push origin main
+
+      - name: Done
+        run: echo "✅ Backend mirrored with full history into GitLab/backend"
