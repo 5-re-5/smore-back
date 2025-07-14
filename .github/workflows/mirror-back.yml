@@ -34,7 +34,7 @@ jobs:
         run: |
           # SSAFY GitLab 레포를 target-repo 폴더로 클론
           git clone \
-            https://oauth2:${{ secrets.GITLAB_TOKEN }}${{GITLAB_URL}} \
+            https://oauth2:${{ secrets.GITLAB_TOKEN }}@lab.ssafy.com/s13-webmobile1-sub1/S13P11A505.git \
             target-repo
           cd target-repo
           git checkout main
