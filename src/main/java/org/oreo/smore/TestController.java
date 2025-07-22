@@ -7,6 +7,6 @@ import org.springframework.web.bind.annotation.RestController;
 public class TestController {
     @GetMapping("/test")
     public String test() {
-        return "1단계 배포 성공!";
+        return "2단계 배포 성공!";
     }
 }
