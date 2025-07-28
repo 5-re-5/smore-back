@@ -9,5 +9,4 @@ public class SmoreApplication {
     public static void main(String[] args) {
         SpringApplication.run(SmoreApplication.class, args);
     }
-
 }
