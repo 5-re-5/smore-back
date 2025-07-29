@@ -47,8 +47,9 @@ public class StudyRoom {
     @Column(name = "deleted_at")
     private LocalDateTime deletedAt;
 
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private String category;
+    private StudyRoomCategory category;
 
     @Column(name = "focus_time")
     private Integer focusTime;
@@ -77,5 +78,13 @@ public class StudyRoom {
     // OpenVidu 세션 종료 시 세션 ID 해제
     public void clearOpenViduSession() {
         this.openViduSessionId = null;
+    }
+
+    // 테스트용 생성자
+    public StudyRoom(Long userId, String title, StudyRoomCategory category) {
+        this.userId = userId;
+        this.title = title;
+        this.category = category;
+        this.maxParticipants = 6;
     }
 }
