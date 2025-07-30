@@ -18,7 +18,7 @@ spring:
       on-profile: dev
 
   datasource:
-    url: jdbc:mysql://${DEV_DB_HOST:localhost}:${DEV_DB_PORT:3306}/${DEV_DB_NAME}?useSSL=true&serverTimezone=Asia/Seoul&characterEncoding=UTF-8
+    url: ${DEV_DB_URL}
     username: ${DEV_DB_USERNAME}
     password: ${DEV_DB_PASSWORD}
     driver-class-name: com.mysql.cj.jdbc.Driver
@@ -38,7 +38,7 @@ spring:
       on-profile: prod
 
   datasource:
-    url: jdbc:mysql://${PROD_DB_HOST:localhost}:${PROD_DB_PORT:3306}/${PROD_DB_NAME}?useSSL=true&serverTimezone=Asia/Seoul&characterEncoding=UTF-8
+    url: ${PROD_DB_URL}
     username: ${PROD_DB_USERNAME}
     password: ${PROD_DB_PASSWORD}
     driver-class-name: com.mysql.cj.jdbc.Driver
