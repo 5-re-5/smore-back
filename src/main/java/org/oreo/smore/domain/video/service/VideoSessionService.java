@@ -15,6 +15,7 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.Objects;
+import static org.oreo.smore.global.exception.VideoExceptions.*;
 
 @Slf4j
 @Service
@@ -66,20 +67,16 @@ public class VideoSessionService {
 
             return response;
         } catch (OpenViduJavaClientException e) {
+
             log.error("[실패] OpenVidu 클라이언트 오류 - {}", e.getMessage(), e);
-            throw new ResponseStatusException(
-                    HttpStatus.INTERNAL_SERVER_ERROR,
-                    "세션 생성 중 클라이언트 오류가 발생했습니다: " + e.getMessage(),
-                    e
-            );
+            throw new VideoSessionException("클라이언트 오류: " + e.getMessage(), e);
+
         } catch (OpenViduHttpException e) {
+
             log.error("[실패] OpenVidu 서버 오류 - status={}, message={}",
                     e.getStatus(), e.getMessage(), e);
-            throw new ResponseStatusException(
-                    HttpStatus.valueOf(e.getStatus()),
-                    "세션 생성 중 서버 오류(" + e.getStatus() + "): " + e.getMessage(),
-                    e
-            );
+            throw new VideoSessionException(
+                    String.format("서버 오류(%d): %s", e.getStatus(), e.getMessage()), e);
         }
     }
 
@@ -87,13 +84,13 @@ public class VideoSessionService {
     public StudyRoom findActiveStudyRoom(Long roomId) {
         return studyRoomRepository
                 .findByRoomIdAndDeletedAtIsNull(roomId)
-                .orElseThrow(() -> new IllegalArgumentException(
-                        "활성 스터디룸을 찾을 수 없습니다. roomId=" + roomId));
+                .orElseThrow(() -> new StudyRoomNotFoundException(
+                "활성 스터디룸을 찾을 수 없습니다. roomId=" + roomId));
     }
 
     private void validateSessionCreation(StudyRoom studyRoom) {
         if (Objects.nonNull(studyRoom.getOpenViduSessionId())) {
-            throw new IllegalStateException(
+            throw new SessionAlreadyExistsException(
                     "이미 세션이 존재합니다. sessionId=" + studyRoom.getOpenViduSessionId());
         }
     }
