@@ -2,6 +2,7 @@ package org.oreo.smore.domain.studyroom;
 
 import jakarta.persistence.*;
 import lombok.AccessLevel;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.CreationTimestamp;
@@ -81,8 +82,9 @@ public class StudyRoom {
     }
 
     // 테스트용 생성자
-    public StudyRoom(Long userId, String title, StudyRoomCategory category) {
+    public StudyRoom(Long userId, Long roomId, String title, StudyRoomCategory category) {
         this.userId = userId;
+        this.roomId = roomId;
         this.title = title;
         this.category = category;
         this.maxParticipants = 6;
