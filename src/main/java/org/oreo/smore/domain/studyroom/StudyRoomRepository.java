@@ -4,8 +4,10 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 public interface StudyRoomRepository extends JpaRepository<StudyRoom, Long> {
+    Optional<StudyRoom> findByRoomIdAndDeletedAtIsNull(Long roomId);
     // 전체 스터디룸을 최근 생성된 순으로 조회
     List<StudyRoom> findAllByOrderByCreatedAtDesc();
 
