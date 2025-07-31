@@ -12,7 +12,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 @SpringBootTest
 @ActiveProfiles("test")
 @TestPropertySource(properties = {
-        "OPENVIDU_URL=https://172.26.3.213:8443",
+        "OPENVIDU_URL=https://i13a505.p.ssafy.io:8443",
         "OPENVIDU_SECRET=jD8fK4qPw1x_2VzLsRm9YeTnA0UcB3zWd7oKiXJ6NvQpGtM5EbChZrLjy"
 })
 class OpenViduConfigTest {
