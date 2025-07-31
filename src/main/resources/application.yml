@@ -67,3 +67,7 @@ spring:
       ddl-auto: validate    # ?? ????? validate ?? none ??
     show-sql: false
     database-platform: org.hibernate.dialect.MySQL8Dialect
+
+openvidu:
+  url: ${OPENVIDU_URL}
+  secret: ${OPENVIDU_SECRET}
