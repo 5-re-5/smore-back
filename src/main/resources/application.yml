@@ -68,6 +68,13 @@ spring:
     show-sql: false
     database-platform: org.hibernate.dialect.MySQL8Dialect
 
-openvidu:
-  url: ${OPENVIDU_URL}
-  secret: ${OPENVIDU_SECRET}
+livekit:
+  url: ${LIVEKIT_URL:https://i13a505.p.ssafy.io:8443}
+  apiKey: ${LIVEKIT_API_KEY:OPENVIDUAPP}
+  apiSecret: ${LIVEKIT_API_SECRET:default_secret}
+
+
+logging:
+  level:
+    io.livekit: DEBUG
+    org.oreo.smore: DEBUG
