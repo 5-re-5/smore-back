@@ -24,8 +24,8 @@ repositories {
 }
 
 dependencies {
-    // OpenVidu 3 Java SDK
-    implementation 'io.openvidu:openvidu-java-client-v2compatibility:3.1.0'
+    // LiveKit Server SDK
+    implementation 'io.livekit:livekit-server:0.10.0'
     // JSON 처리
     implementation 'com.fasterxml.jackson.core:jackson-databind'
     implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310'
