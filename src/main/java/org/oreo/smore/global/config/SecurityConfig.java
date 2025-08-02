@@ -25,7 +25,7 @@ public class SecurityConfig {
     private final CustomOAuth2UserService oAuth2UserService;
 
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http, TokenService tokenService) throws Exception {
+    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
                 .csrf(AbstractHttpConfigurer::disable)
                 .exceptionHandling(ex -> ex
@@ -33,13 +33,19 @@ public class SecurityConfig {
                 )
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(
-                                "/v1/auth/**",
-                                "/oauth2/**",   // 로그인 시작 엔드포인트
-                                "/login/oauth2/code/**"  // 콜백 엔드포인트
+                                "/api/v1/auth/**",                  // 자체 로그인/회원가입 API
+                                "/api/oauth2/authorization/**",     // OAuth2 로그인 진입점
+                                "/api/login/oauth2/code/**"         // OAuth2 콜백 엔드포인트
                         ).permitAll()
                         .anyRequest().authenticated()
                 )
                 .oauth2Login(oauth2 -> oauth2
+                        .authorizationEndpoint(authz -> authz
+                                .baseUri("/api/oauth2/authorization")
+                        )
+                        .redirectionEndpoint(redir -> redir
+                                .baseUri("/api/login/oauth2/code/*")
+                        )
                         .userInfoEndpoint(u -> u.userService(oAuth2UserService))
                         .successHandler(new OAuth2SuccessHandler(tokenProvider, tokenService))
                 )
