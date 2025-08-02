@@ -20,7 +20,7 @@ spring:
             scope:
               - email
               - profile
-            redirect-uri: ${OAUTH2_REDIRECT_URI:{baseUrl}/login/oauth2/code/{registrationId}}
+            redirect-uri: ${OAUTH2_REDIRECT_URI:${baseUrl}/api/login/oauth2/code/{registrationId}}
             client-name: Google
 
 jwt:
@@ -44,7 +44,7 @@ spring:
 
   jpa:
     hibernate:
-      ddl-auto: validate    # ?? ????? validate ?? none ??
+      ddl-auto: ${JPA_DDL_AUTO_SET}  # ?? ????? validate ?? none ??
     show-sql: false
     database-platform: org.hibernate.dialect.MySQL8Dialect
 
@@ -64,7 +64,7 @@ spring:
 
   jpa:
     hibernate:
-      ddl-auto: validate    # ?? ????? validate ?? none ??
+      ddl-auto: ${JPA_DDL_AUTO_SET}    # ?? ????? validate ?? none ??
     show-sql: false
     database-platform: org.hibernate.dialect.MySQL8Dialect
 
