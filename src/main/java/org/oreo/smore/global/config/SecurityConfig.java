@@ -32,7 +32,11 @@ public class SecurityConfig {
                         .authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED))
                 )
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/v1/auth/**", "/oauth2/**").permitAll()
+                        .requestMatchers(
+                                "/v1/auth/**",
+                                "/oauth2/**",   // 로그인 시작 엔드포인트
+                                "/login/oauth2/code/**"  // 콜백 엔드포인트
+                        ).permitAll()
                         .anyRequest().authenticated()
                 )
                 .oauth2Login(oauth2 -> oauth2
