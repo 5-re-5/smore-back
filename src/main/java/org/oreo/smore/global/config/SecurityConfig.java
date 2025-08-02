@@ -33,18 +33,18 @@ public class SecurityConfig {
                 )
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(
-                                "/api/v1/auth/**",                  // 자체 로그인/회원가입 API
-                                "/api/oauth2/authorization/**",     // OAuth2 로그인 진입점
-                                "/api/login/oauth2/code/**"         // OAuth2 콜백 엔드포인트
+                                "/v1/auth/**",                  // 자체 로그인/회원가입 API
+                                "/oauth2/authorization/**",     // OAuth2 로그인 진입점
+                                "/login/oauth2/code/**"         // OAuth2 콜백 엔드포인트
                         ).permitAll()
                         .anyRequest().authenticated()
                 )
                 .oauth2Login(oauth2 -> oauth2
                         .authorizationEndpoint(authz -> authz
-                                .baseUri("/api/oauth2/authorization")
+                                .baseUri("/oauth2/authorization")
                         )
                         .redirectionEndpoint(redir -> redir
-                                .baseUri("/api/login/oauth2/code/*")
+                                .baseUri("/login/oauth2/code/*")
                         )
                         .userInfoEndpoint(u -> u.userService(oAuth2UserService))
                         .successHandler(new OAuth2SuccessHandler(tokenProvider, tokenService))
