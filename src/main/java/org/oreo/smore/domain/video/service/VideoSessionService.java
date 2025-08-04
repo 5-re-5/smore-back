@@ -1,20 +1,10 @@
 package org.oreo.smore.domain.video.service;
 
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.oreo.smore.domain.studyroom.StudyRoom;
-import org.oreo.smore.domain.studyroom.StudyRoomRepository;
-import org.oreo.smore.domain.video.dto.SessionCreateRequest;
-import org.oreo.smore.domain.video.dto.SessionResponse;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.server.ResponseStatusException;
 
-import java.util.Objects;
-import static org.oreo.smore.global.exception.VideoExceptions.*;
 
 @Slf4j
 @Service
