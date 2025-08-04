@@ -64,15 +64,28 @@ public class StudyRoom {
     @Column(name = "invite_created_at")
     private LocalDateTime inviteCreatedAt;
 
-    @Column(name = "openvidu_session_id")
-    private String openViduSessionId;
+    // Livekit 에서는 Room Name으로 사용됩 !
+    @Column(name = "livekit_room_id")
+    private String liveKitRoomId;
 
     // soft delete용
     public void delete() {
         this.deletedAt = LocalDateTime.now();
     }
 
+    // LiveKit 방 ID 설정
+    public void setLiveKitRoomId(String liveKitRoomId) {
+        this.liveKitRoomId = liveKitRoomId;
+    }
 
+    // LiveKit 방 ID 생성 ("room_" + roomId)
+    public String generateLiveKitRoomId() {
+        return "room_" + this.roomId;
+    }
+
+    public boolean hasLiveKitRoom() {
+        return liveKitRoomId != null && !liveKitRoomId.trim().isEmpty();
+    }
 
     // 테스트용 생성자
     public StudyRoom(Long userId, Long roomId, String title, StudyRoomCategory category) {
@@ -81,5 +94,24 @@ public class StudyRoom {
         this.title = title;
         this.category = category;
         this.maxParticipants = 6;
+    }
+
+    @Builder
+    public StudyRoom(Long userId, String title, String description, String password,
+                     Integer maxParticipants, String thumbnailUrl, String tag,
+                     StudyRoomCategory category, Integer focusTime, Integer breakTime,
+                     String inviteHashCode, String liveKitRoomId) {
+        this.userId = userId;
+        this.title = title;
+        this.description = description;
+        this.password = password;
+        this.maxParticipants = maxParticipants != null ? maxParticipants : 6;
+        this.thumbnailUrl = thumbnailUrl;
+        this.tag = tag;
+        this.category = category;
+        this.focusTime = focusTime;
+        this.breakTime = breakTime;
+        this.inviteHashCode = inviteHashCode;
+        this.liveKitRoomId = liveKitRoomId;
     }
 }
