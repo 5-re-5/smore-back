@@ -32,7 +32,7 @@ jwt:
 
 livekit:
   url: ${LIVEKIT_URL}
-  apiKey: ${LIVEKIT_API_KEY:OPENVIDUAPP}
+  apiKey: ${LIVEKIT_API_KEY}
   apiSecret: ${LIVEKIT_API_SECRET}
 
 
