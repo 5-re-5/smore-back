@@ -1,7 +1,7 @@
 livekit:
-  url: ${LIVEKIT_URL:https://i13a505.p.ssafy.io:8181/}
-  apiKey: ${LIVEKIT_API_KEY:OPENVIDUAPP}
-  apiSecret: ${LIVEKIT_API_SECRET:default_secret}
+  url: ${LIVEKIT_URL:https://i13a505.p.ssafy.io:8844}
+  apiKey: ${LIVEKIT_API_KEY:4xJX6A2tQz}
+  apiSecret: ${LIVEKIT_API_SECRET:sE9zV6JtGxLqWp0D1bR8uY5mN2aK4hQ7}
 
 spring:
   datasource:
