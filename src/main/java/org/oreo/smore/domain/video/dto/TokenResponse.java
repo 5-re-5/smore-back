@@ -1,6 +1,5 @@
 package org.oreo.smore.domain.video.dto;
 
-import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -10,7 +9,6 @@ import java.time.LocalDateTime;
 @Getter
 @Builder
 @NoArgsConstructor
-@AllArgsConstructor
 public class TokenResponse {
 
     // 생성된 livekit 액세스 토큰
