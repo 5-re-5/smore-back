@@ -38,7 +38,7 @@ spring:
       on-profile: dev
 
   datasource:
-    url: ${DEV_DB_URL}
+    url: jdbc:mysql://${DEV_DB_HOST}:${DEV_DB_PORT}/${DEV_DB_NAME}?${DEV_DB_PARAMS}
     username: ${DEV_DB_USERNAME}
     password: ${DEV_DB_PASSWORD}
     driver-class-name: com.mysql.cj.jdbc.Driver
@@ -58,7 +58,7 @@ spring:
       on-profile: prod
 
   datasource:
-    url: ${PROD_DB_URL}
+    url: jdbc:mysql://${PROD_DB_HOST}:${PROD_DB_PORT}/${PROD_DB_NAME}?${PROD_DB_PARAMS}
     username: ${PROD_DB_USERNAME}
     password: ${PROD_DB_PASSWORD}
     driver-class-name: com.mysql.cj.jdbc.Driver
