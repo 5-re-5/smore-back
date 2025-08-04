@@ -29,6 +29,17 @@ jwt:
   refresh-token-secret: ${REFRESH_TOKEN_SECRET_KEY}
   access-token-expiration-ms: ${ACCESS_TOKEN_EXP_MS:900000}     # 15분
   refresh-token-expiration-ms: ${REFRESH_TOKEN_EXP_MS:604800000}  # 7일
+
+livekit:
+  url: ${LIVEKIT_URL}
+  apiKey: ${LIVEKIT_API_KEY:OPENVIDUAPP}
+  apiSecret: ${LIVEKIT_API_SECRET}
+
+
+logging:
+  level:
+    io.livekit: DEBUG
+    org.oreo.smore: DEBUG
 ---
 
 # ??? ??
@@ -68,14 +79,3 @@ spring:
       ddl-auto: ${JPA_DDL_AUTO_SET}    # ?? ????? validate ?? none ??
     show-sql: false
     database-platform: org.hibernate.dialect.MySQL8Dialect
-
-livekit:
-  url: ${LIVEKIT_URL}
-  apiKey: ${LIVEKIT_API_KEY:OPENVIDUAPP}
-  apiSecret: ${LIVEKIT_API_SECRET}
-
-
-logging:
-  level:
-    io.livekit: DEBUG
-    org.oreo.smore: DEBUG
