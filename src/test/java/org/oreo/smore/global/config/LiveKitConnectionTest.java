@@ -1,4 +1,4 @@
-package org.oreo.smore.config;
+package org.oreo.smore.global.config;
 import io.livekit.server.RoomServiceClient;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
