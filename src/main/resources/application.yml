@@ -5,6 +5,12 @@ server:
 spring:
   application:
     name: smore
+
+  servlet:
+    multipart:
+      max-file-size: ${MAX_FILE_SIZE}
+      max-request-size: ${MAX_REQUEST_SIZE}
+
   # ?? ?? ???? ?? (??? dev ???? ??)
   profiles:
     active: ${SPRING_PROFILES_ACTIVE:dev}
@@ -29,6 +35,14 @@ jwt:
   refresh-token-secret: ${REFRESH_TOKEN_SECRET_KEY}
   access-token-expiration-ms: ${ACCESS_TOKEN_EXP_MS:900000}     # 15분
   refresh-token-expiration-ms: ${REFRESH_TOKEN_EXP_MS:604800000}  # 7일
+
+azure:
+  storage:
+    account-name: ${AZURE_STORAGE_ACCOUNT_NAME}
+    account-key: ${AZURE_STORAGE_ACCOUNT_KEY}
+    endpoint: ${AZURE_STORAGE_ENDPOINT}
+    container-name: ${AZURE_STORAGE_CONTAINER_NAME}
+    sas-token: ${AZURE_STORAGE_SAS_TOKEN}
 ---
 
 # ??? ??
