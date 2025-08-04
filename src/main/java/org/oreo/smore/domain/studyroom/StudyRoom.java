@@ -72,14 +72,7 @@ public class StudyRoom {
         this.deletedAt = LocalDateTime.now();
     }
 
-    // OpenVidu 세션이 생성되었을 때 세션 ID를 할당
-    public void assignOpenViduSession(String sessionId) {
-        this.openViduSessionId = sessionId;
-    }
-    // OpenVidu 세션 종료 시 세션 ID 해제
-    public void clearOpenViduSession() {
-        this.openViduSessionId = null;
-    }
+
 
     // 테스트용 생성자
     public StudyRoom(Long userId, Long roomId, String title, StudyRoomCategory category) {
