@@ -78,9 +78,9 @@ public class StudyRoom {
         this.liveKitRoomId = liveKitRoomId;
     }
 
-    // LiveKit 방 ID 생성 ("room_" + roomId)
+    // LiveKit 방 ID 생성 ("study-room-" + roomId)
     public String generateLiveKitRoomId() {
-        return "room_" + this.roomId;
+        return "study-room-" + this.roomId;
     }
 
     public boolean hasLiveKitRoom() {
