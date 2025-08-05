@@ -1,6 +1,8 @@
 package org.oreo.smore.domain.user;
 
 import lombok.RequiredArgsConstructor;
+import org.oreo.smore.domain.user.dto.request.UserUpdateRequest;
+import org.oreo.smore.domain.user.dto.request.UserUpdateResponse;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -35,4 +37,7 @@ public class UserService {
                 .orElseThrow(() -> new RuntimeException("User not found: " + email));
     }
 
+    public UserUpdateResponse updateUser(Long userId, UserUpdateRequest userUpdateRequest) {
+        return null;
+    }
 }
