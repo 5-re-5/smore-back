@@ -15,17 +15,15 @@ public class TokenRequest {
     private String roomName;
 
     @NotBlank(message = "사용자 식별자는 필수입니다.")
-    private String identity;
+    private String identity;   // 보통 userId 사용 + 프로필 url 매칭
 
     @NotNull(message = "발행 권한 설정은 필수입니다.")
     private Boolean canPublish;
 
     private Boolean canSubscribe;
+
     private Integer tokenExpirySeconds;
 
-    /**
-     * Builder가 사용할 모든 필드를 받는 생성자 (기본값 설정 포함)
-     */
     public TokenRequest(String roomName, String identity, Boolean canPublish,
                         Boolean canSubscribe, Integer tokenExpirySeconds) {
         this.roomName = roomName;
