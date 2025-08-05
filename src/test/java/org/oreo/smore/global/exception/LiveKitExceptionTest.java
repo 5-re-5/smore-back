@@ -2,6 +2,7 @@ package org.oreo.smore.global.exception;
 
 
 import org.junit.jupiter.api.Test;
+import org.oreo.smore.domain.video.exception.LiveKitException;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.ResponseStatus;
 
