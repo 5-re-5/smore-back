@@ -27,6 +27,7 @@ public class VideoCallController {
     @PostMapping("/{roomId}/join")
     public ResponseEntity<TokenResponse> joinRoom(
             @PathVariable Long roomId,
+            @RequestParam Long userId,
             @Valid @RequestBody JoinRoomRequest request) {
         log.info("스터디룸 입장 요청 - 방ID: {}, 사용자: [{}]", roomId, request.getIdentity());
 
@@ -48,8 +49,9 @@ public class VideoCallController {
 
         TokenResponse tokenResponse = tokenService.generateToken(tokenRequest);
 
-        log.info("✅ 스터디룸 입장 성공 - DB방ID: {}, LiveKit방: [{}], 사용자: [{}], 토큰길이: {}자",
-                roomId, liveKitRoomName, request.getIdentity(), tokenResponse.getAccessToken().length());
+        log.info("✅ 스터디룸 입장 성공 - 방ID: {}, 사용자: [{}], 방장여부: [{}]",
+                roomId, request.getIdentity(), studyRoomValidator.isRoomOwner(studyRoom, userId));
+
 
         return ResponseEntity.ok(tokenResponse);
     }
