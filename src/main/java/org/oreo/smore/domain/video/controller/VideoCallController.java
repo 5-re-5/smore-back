@@ -32,7 +32,7 @@ public class VideoCallController {
         log.info("스터디룸 입장 요청 - 방ID: {}, 사용자: [{}]", roomId, request.getIdentity());
 
         // 방 입장 검증
-        StudyRoom studyRoom = studyRoomValidator.validateRoomAccess(roomId, request);
+        StudyRoom studyRoom = studyRoomValidator.validateRoomAccess(roomId, request, userId);
         // 방 정보 로깅
         studyRoomValidator.logRoomInfo(studyRoom);
         // LiveKit 방ID
@@ -60,11 +60,13 @@ public class VideoCallController {
     @PostMapping("/{roomId}/rejoin")
     public ResponseEntity<TokenResponse> rejoinRoom(
             @PathVariable Long roomId,
+            @RequestParam Long userId,
             @Valid @RequestBody JoinRoomRequest request
     ) {
-        log.info("스터디룸 토큰 재발급 요청 - 방ID: {}, 사용자: [{}]", roomId, request.getIdentity());
+        log.info("스터디룸 토큰 재발급 요청 - 방ID: {}, 사용자ID: {}, 사용자: [{}]",
+                roomId, userId, request.getIdentity());
 
-        StudyRoom studyRoom = studyRoomValidator.validateRoomAccess(roomId, request);
+        StudyRoom studyRoom = studyRoomValidator.validateRoomAccess(roomId, request, userId);
 
         String liveKitRoomName = studyRoom.hasLiveKitRoom()
                 ? studyRoom.getLiveKitRoomId()
