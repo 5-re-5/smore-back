@@ -14,7 +14,7 @@ public class StudyTimeService {
     /**
      * 공부 시작
      */
-    public StudyTime startStudy(Long userId) {
+    public StudyTime startStudyTime(Long userId) {
         StudyTime studyTime = StudyTime.builder()
                 .userId(userId)
                 .createdAt(LocalDateTime.now()) // 서버에서 현재 시간 저장
@@ -24,6 +24,7 @@ public class StudyTimeService {
         return studyTimeRepository.save(studyTime);
     }
 
-    public void updateStudy(Long userId) {
+    public void updateStudyTime(Long userId) {
+
     }
 }

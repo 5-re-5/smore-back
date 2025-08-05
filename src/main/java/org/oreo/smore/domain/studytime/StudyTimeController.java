@@ -17,20 +17,20 @@ public class StudyTimeController {
      * POST /api/v1/study-times/{user_id}
      */
     @PostMapping("/v1/study-times/{userId}")
-    public ResponseEntity<String> startStudy(@PathVariable Long userId, Authentication authentication) {
+    public ResponseEntity<String> startStudyTime(@PathVariable Long userId, Authentication authentication) {
         if (Long.parseLong(authentication.getPrincipal().toString()) != userId) {
             return new ResponseEntity<>(HttpStatus.UNAUTHORIZED); // userId가 다르면 401
         }
-        studyTimeService.startStudy(userId);
+        studyTimeService.startStudyTime(userId);
         return ResponseEntity.status(201).body("created");
     }
 
     @PatchMapping("/v1/study-times/{userId}")
-    public ResponseEntity<String> updateStudy(@PathVariable Long userId, Authentication authentication) {
+    public ResponseEntity<String> updateStudyTime(@PathVariable Long userId, Authentication authentication) {
         if (Long.parseLong(authentication.getPrincipal().toString()) != userId) {
             return new ResponseEntity<>(HttpStatus.UNAUTHORIZED); // userId가 다르면 401
         }
-        studyTimeService.updateStudy(userId);
+        studyTimeService.updateStudyTime(userId);
         return ResponseEntity.ok("OK");
     }
 }
