@@ -3,11 +3,10 @@ package org.oreo.smore.domain.video.service;
 import io.livekit.server.AccessToken;
 import io.livekit.server.RoomJoin;
 import io.livekit.server.RoomName;
-import io.livekit.server.VideoGrant;
 import lombok.extern.slf4j.Slf4j;
 import org.oreo.smore.domain.video.dto.TokenRequest;
 import org.oreo.smore.domain.video.dto.TokenResponse;
-import org.oreo.smore.global.exception.LiveKitException;
+import org.oreo.smore.domain.video.exception.LiveKitException;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
