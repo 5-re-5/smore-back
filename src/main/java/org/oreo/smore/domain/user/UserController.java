@@ -24,7 +24,7 @@ public class UserController {
             @PathVariable Long userId,
             @Valid @ModelAttribute UserUpdateRequest userUpdateRequest,
             Authentication authentication,
-            BindingResult bindingResult) {
+            BindingResult bindingResult) throws Exception {
 
         if (Long.parseLong(authentication.getPrincipal().toString()) != userId) {
             return new ResponseEntity<>(HttpStatus.UNAUTHORIZED); // userId가 다르면 401
