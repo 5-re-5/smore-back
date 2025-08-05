@@ -24,10 +24,10 @@ public class TokenResponse {
     private LocalDateTime expiresAt;
 
     // 발행 권한 (마이크 카메라 권한)
-    private boolean canPublish;
+    private Boolean canPublish;
 
     // 구독 권한
-    private boolean canSubscribe;
+    private Boolean canSubscribe;
 
     // 토큰 생성 시간
     private LocalDateTime createdAt;
@@ -39,8 +39,8 @@ public class TokenResponse {
         this.roomName = roomName;
         this.identity = identity;
         this.expiresAt = expiresAt;
-        this.canPublish = canPublish;
-        this.canSubscribe = canSubscribe;
+        this.canPublish = canPublish != null ? canPublish : true;
+        this.canSubscribe = canSubscribe != null ? canSubscribe : true;
         this.createdAt = createdAt != null ? createdAt : LocalDateTime.now();
     }
 
