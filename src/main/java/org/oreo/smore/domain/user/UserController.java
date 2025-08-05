@@ -14,12 +14,11 @@ import org.springframework.web.server.ResponseStatusException;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/v1")
 public class UserController {
 
     private final UserService userService;
 
-    @PatchMapping(value = "/users/{userId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PatchMapping(value = "/v1/users/{userId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<UserUpdateResponse> updateUser(
             @PathVariable Long userId,
             @Valid @ModelAttribute UserUpdateRequest userUpdateRequest,
