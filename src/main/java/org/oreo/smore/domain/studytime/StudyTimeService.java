@@ -23,4 +23,7 @@ public class StudyTimeService {
 
         return studyTimeRepository.save(studyTime);
     }
+
+    public void updateStudy(Long userId) {
+    }
 }

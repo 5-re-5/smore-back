@@ -24,4 +24,13 @@ public class StudyTimeController {
         studyTimeService.startStudy(userId);
         return ResponseEntity.status(201).body("created");
     }
+
+    @PatchMapping("/v1/study-times/{userId}")
+    public ResponseEntity<String> updateStudy(@PathVariable Long userId, Authentication authentication) {
+        if (Long.parseLong(authentication.getPrincipal().toString()) != userId) {
+            return new ResponseEntity<>(HttpStatus.UNAUTHORIZED); // userId가 다르면 401
+        }
+        studyTimeService.updateStudy(userId);
+        return ResponseEntity.ok("OK");
+    }
 }
