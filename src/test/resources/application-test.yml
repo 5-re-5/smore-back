@@ -62,15 +62,17 @@ jwt:
   refresh-token-expiration-ms: 604800000  # 7일
 
 livekit:
-  url: https://i13a505.p.ssafy.io:8844
-  apiKey: 4xJX6A2tQz
-  apiSecret: sE9zV6JtGxLqWp0D1bR8uY5mN2aK4hQ7
+  url: ${LIVEKIT_URL}
+  apiKey: ${LIVEKIT_API_KEY}
+  apiSecret: ${LIVEKIT_API_SECRET}
 
 azure:
   storage:
-    account-name: test-storage-account
-    account-key: test-storage-key
-    container-name: test-container
+    account-name: ${AZURE_STORAGE_ACCOUNT_NAME}
+    account-key: ${AZURE_STORAGE_ACCOUNT_KEY}
+    endpoint: ${AZURE_STORAGE_ENDPOINT}
+    container-name: ${AZURE_STORAGE_CONTAINER_NAME}
+    sas-token: ${AZURE_STORAGE_SAS_TOKEN}
 
 logging:
   level:

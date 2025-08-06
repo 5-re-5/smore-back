@@ -36,6 +36,14 @@ jwt:
   access-token-expiration-ms: ${ACCESS_TOKEN_EXP_MS:900000}     # 15분
   refresh-token-expiration-ms: ${REFRESH_TOKEN_EXP_MS:604800000}  # 7일
 
+azure:
+  storage:
+    account-name: ${AZURE_STORAGE_ACCOUNT_NAME}
+    account-key: ${AZURE_STORAGE_ACCOUNT_KEY}
+    endpoint: ${AZURE_STORAGE_ENDPOINT}
+    container-name: ${AZURE_STORAGE_CONTAINER_NAME}
+    sas-token: ${AZURE_STORAGE_SAS_TOKEN}
+
 livekit:
   url: ${LIVEKIT_URL}
   apiKey: ${LIVEKIT_API_KEY}
@@ -55,7 +63,7 @@ spring:
       on-profile: dev
 
   datasource:
-    url: ${DEV_DB_URL}
+    url: jdbc:mysql://${DEV_DB_HOST}:${DEV_DB_PORT}/${DEV_DB_NAME}?${DEV_DB_PARAMS}
     username: ${DEV_DB_USERNAME}
     password: ${DEV_DB_PASSWORD}
     driver-class-name: com.mysql.cj.jdbc.Driver
