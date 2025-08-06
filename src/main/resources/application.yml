@@ -43,6 +43,17 @@ azure:
     endpoint: ${AZURE_STORAGE_ENDPOINT}
     container-name: ${AZURE_STORAGE_CONTAINER_NAME}
     sas-token: ${AZURE_STORAGE_SAS_TOKEN}
+
+livekit:
+  url: ${LIVEKIT_URL}
+  apiKey: ${LIVEKIT_API_KEY}
+  apiSecret: ${LIVEKIT_API_SECRET}
+
+
+logging:
+  level:
+    io.livekit: DEBUG
+    org.oreo.smore: DEBUG
 ---
 
 # ??? ??
@@ -72,7 +83,7 @@ spring:
       on-profile: prod
 
   datasource:
-    url: jdbc:mysql://${PROD_DB_HOST}:${PROD_DB_PORT}/${PROD_DB_NAME}?${PROD_DB_PARAMS}
+    url: ${PROD_DB_URL}
     username: ${PROD_DB_USERNAME}
     password: ${PROD_DB_PASSWORD}
     driver-class-name: com.mysql.cj.jdbc.Driver
@@ -83,6 +94,3 @@ spring:
     show-sql: false
     database-platform: org.hibernate.dialect.MySQL8Dialect
 
-openvidu:
-  url: ${OPENVIDU_URL}
-  secret: ${OPENVIDU_SECRET}
