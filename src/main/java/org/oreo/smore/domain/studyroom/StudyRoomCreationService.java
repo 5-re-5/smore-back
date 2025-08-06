@@ -180,6 +180,15 @@ public class StudyRoomCreationService {
         return hashCode;
     }
 
+    private String generateLiveKitRoomId() {
+        String liveKitRoomId = "study-room-" + UUID.randomUUID().toString()
+                .replace("-", "")
+                .substring(0, 8)
+                .toLowerCase();
+        log.debug("LiveKit 방 ID 생성: [{}]", liveKitRoomId);
+        return liveKitRoomId;
+    }
+
     private StudyRoom createStudyRoomEntity(Long userId, CreateStudyRoomRequest request, String inviteHashCode) {
         return StudyRoom.builder()
                 .userId(userId)
@@ -192,6 +201,7 @@ public class StudyRoomCreationService {
                 .focusTime(request.getFocusTime())
                 .breakTime(request.getBreakTime())
                 .inviteHashCode(inviteHashCode)
+                .liveKitRoomId(generateLiveKitRoomId())
                 .build();
     }
 

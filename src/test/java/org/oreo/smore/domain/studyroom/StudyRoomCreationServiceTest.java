@@ -11,12 +11,17 @@ import org.oreo.smore.domain.studyroom.dto.CreateStudyRoomRequest;
 import org.oreo.smore.domain.studyroom.dto.CreateStudyRoomResponse;
 import org.oreo.smore.domain.studyroom.exception.StudyRoomCreationException;
 import org.oreo.smore.domain.studyroom.exception.StudyRoomValidationException;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.ActiveProfiles;
+import org.springframework.transaction.annotation.Transactional;
 
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
-@ExtendWith(MockitoExtension.class)
+@SpringBootTest
+@ActiveProfiles("test")
+@Transactional // 테스트 후 롤백
 @DisplayName("스터디룸 생성 서비스 테스트")
 public class StudyRoomCreationServiceTest {
 
@@ -54,6 +59,7 @@ public class StudyRoomCreationServiceTest {
                 .focusTime(25)
                 .breakTime(5)
                 .inviteHashCode("ABCD1234EFGH")
+                .liveKitRoomId("study-room-abcd1234")
                 .build();
     }
 
@@ -71,8 +77,25 @@ public class StudyRoomCreationServiceTest {
         assertThat(response).isNotNull();
         assertThat(response.getRoomId()).isEqualTo(1L);
         assertThat(response.getTitle()).isEqualTo("Java 스터디");
+        assertThat(response.getLiveKitRoomId()).isNotNull();
         assertThat(response.getInviteHashCode()).isEqualTo("ABCD1234EFGH");
         verify(studyRoomRepository, times(1)).save(any(StudyRoom.class));
+    }
+
+    @Test
+    @DisplayName("LiveKit 방 ID가 생성되는지 확인")
+    void LiveKit_방ID가_생성되는지_확인() {
+        // given
+        Long userId = 100L;
+        when(studyRoomRepository.save(any(StudyRoom.class))).thenReturn(savedStudyRoom);
+
+        // when
+        CreateStudyRoomResponse response = studyRoomCreationService.createStudyRoom(userId, validRequest);
+
+        // then
+        assertThat(response.getLiveKitRoomId()).isNotNull();
+        assertThat(response.getLiveKitRoomId()).startsWith("study-room-");
+        assertThat(response.getLiveKitRoomId()).hasSize(19); // "study-room-" + 8자리
     }
 
     @Test

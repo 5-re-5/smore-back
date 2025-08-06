@@ -24,11 +24,12 @@ public class CreateStudyRoomResponse {
     private String inviteHashCode;
     private LocalDateTime createdAt;
     private Long ownerId;
+    private String liveKitRoomId;
 
     public CreateStudyRoomResponse(Long roomId, String title, String description,
                                    boolean hasPassword, Integer maxParticipants, String tag,
                                    StudyRoomCategory category, Integer focusTime, Integer breakTime,
-                                   String inviteHashCode, LocalDateTime createdAt, Long ownerId) {
+                                   String inviteHashCode, LocalDateTime createdAt, Long ownerId,  String liveKitRoomId) {
         this.roomId = roomId;
         this.title = title;
         this.description = description;
@@ -41,6 +42,7 @@ public class CreateStudyRoomResponse {
         this.inviteHashCode = inviteHashCode;
         this.createdAt = createdAt;
         this.ownerId = ownerId;
+        this.liveKitRoomId = liveKitRoomId;
     }
 
     public static CreateStudyRoomResponse from(org.oreo.smore.domain.studyroom.StudyRoom studyRoom) {
@@ -57,6 +59,7 @@ public class CreateStudyRoomResponse {
                 .inviteHashCode(studyRoom.getInviteHashCode())
                 .createdAt(studyRoom.getCreatedAt())
                 .ownerId(studyRoom.getUserId())
+                .liveKitRoomId(studyRoom.getLiveKitRoomId())
                 .build();
     }
 }
