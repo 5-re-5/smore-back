@@ -23,19 +23,16 @@ import static org.mockito.Mockito.*;
 @SpringBootTest
 @ActiveProfiles("test")
 @Transactional // 테스트 후 롤백
-@Import(StudyRoomCreationServiceIntegrationTest.TestConfig.class) // ✅ 최신 방식
+@Import(StudyRoomCreationServiceIntegrationTest.TestConfig.class)
 @DisplayName("스터디룸 생성 서비스 통합 테스트")
 class StudyRoomCreationServiceIntegrationTest {
 
-    /**
-     * ✅ @MockBean 대체: TestConfiguration 사용
-     */
     @TestConfiguration
     static class TestConfig {
         @Bean
-        @Primary // 기존 Bean보다 우선순위
+        @Primary
         public CloudStorageManager cloudStorageManager() {
-            return mock(CloudStorageManager.class); // Mock 객체 생성
+            return mock(CloudStorageManager.class);
         }
     }
 
