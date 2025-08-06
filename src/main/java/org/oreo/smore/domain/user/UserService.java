@@ -4,8 +4,10 @@ import lombok.RequiredArgsConstructor;
 import org.oreo.smore.domain.user.dto.request.UserUpdateRequest;
 import org.oreo.smore.domain.user.dto.request.UserUpdateResponse;
 import org.oreo.smore.global.common.CloudStorageManager;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -48,6 +50,9 @@ public class UserService {
 
         // 닉네임 변경
         if (req.getNickname() != null && !req.getNickname().isBlank()) {
+            if (repository.existsByNickname(req.getNickname())) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "이미 사용 중인 닉네임입니다.");
+            }
             user.setNickname(req.getNickname());
         }
 
