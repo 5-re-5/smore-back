@@ -64,21 +64,27 @@ public class StudyRoom {
     @Column(name = "invite_created_at")
     private LocalDateTime inviteCreatedAt;
 
-    @Column(name = "openvidu_session_id")
-    private String openViduSessionId;
+    // Livekit 에서는 Room Name으로 사용됩 !
+    @Column(name = "livekit_room_id")
+    private String liveKitRoomId;
 
     // soft delete용
     public void delete() {
         this.deletedAt = LocalDateTime.now();
     }
 
-    // OpenVidu 세션이 생성되었을 때 세션 ID를 할당
-    public void assignOpenViduSession(String sessionId) {
-        this.openViduSessionId = sessionId;
+    // LiveKit 방 ID 설정
+    public void setLiveKitRoomId(String liveKitRoomId) {
+        this.liveKitRoomId = liveKitRoomId;
     }
-    // OpenVidu 세션 종료 시 세션 ID 해제
-    public void clearOpenViduSession() {
-        this.openViduSessionId = null;
+
+    // LiveKit 방 ID 생성 ("study-room-" + roomId)
+    public String generateLiveKitRoomId() {
+        return "study-room-" + this.roomId;
+    }
+
+    public boolean hasLiveKitRoom() {
+        return liveKitRoomId != null && !liveKitRoomId.trim().isEmpty();
     }
 
     // 테스트용 생성자
@@ -88,5 +94,25 @@ public class StudyRoom {
         this.title = title;
         this.category = category;
         this.maxParticipants = 6;
+    }
+
+    @Builder
+    public StudyRoom(Long roomId, Long userId, String title, String description, String password,
+                     Integer maxParticipants, String thumbnailUrl, String tag,
+                     StudyRoomCategory category, Integer focusTime, Integer breakTime,
+                     String inviteHashCode, String liveKitRoomId) {
+        this.roomId = roomId;  // 이 줄 추가
+        this.userId = userId;
+        this.title = title;
+        this.description = description;
+        this.password = password;
+        this.maxParticipants = maxParticipants != null ? maxParticipants : 6;
+        this.thumbnailUrl = thumbnailUrl;
+        this.tag = tag;
+        this.category = category;
+        this.focusTime = focusTime;
+        this.breakTime = breakTime;
+        this.inviteHashCode = inviteHashCode;
+        this.liveKitRoomId = liveKitRoomId;
     }
 }

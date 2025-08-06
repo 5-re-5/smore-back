@@ -24,13 +24,19 @@ repositories {
 }
 
 dependencies {
-    // OpenVidu 3 Java SDK
-    implementation 'io.openvidu:openvidu-java-client-v2compatibility:3.1.0'
+    // LiveKit Server SDK
+    implementation 'io.livekit:livekit-server:0.10.0'
+    // gRPC 관련
+    implementation 'io.grpc:grpc-netty-shaded:1.58.0'
+    implementation 'io.grpc:grpc-protobuf:1.58.0'
+    implementation 'io.grpc:grpc-stub:1.58.0'
     // JSON 처리
     implementation 'com.fasterxml.jackson.core:jackson-databind'
     implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310'
     // DTO 검증
     implementation 'org.springframework.boot:spring-boot-starter-validation'
+    // Azure Blob Storage
+    implementation 'com.azure:azure-storage-blob:12.25.0'
 
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
     implementation 'org.springframework.boot:spring-boot-starter-oauth2-client'
@@ -41,6 +47,8 @@ dependencies {
     runtimeOnly 'com.mysql:mysql-connector-j'
     annotationProcessor 'org.projectlombok:lombok'
     // 테스트용
+    testCompileOnly 'org.projectlombok:lombok'
+    testAnnotationProcessor 'org.projectlombok:lombok'
     testImplementation 'com.h2database:h2'
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testImplementation 'org.springframework.security:spring-security-test'
