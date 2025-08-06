@@ -97,10 +97,11 @@ public class StudyRoom {
     }
 
     @Builder
-    public StudyRoom(Long userId, String title, String description, String password,
+    public StudyRoom(Long roomId, Long userId, String title, String description, String password,
                      Integer maxParticipants, String thumbnailUrl, String tag,
                      StudyRoomCategory category, Integer focusTime, Integer breakTime,
                      String inviteHashCode, String liveKitRoomId) {
+        this.roomId = roomId;  // 이 줄 추가
         this.userId = userId;
         this.title = title;
         this.description = description;
