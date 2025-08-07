@@ -1,44 +1,33 @@
-package org.oreo.smore.domain.user.dto.request;
+package org.oreo.smore.domain.user.dto.response;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
-@Data
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class UserUpdateResponse {
+public class UserInfoResponse {
 
     private DataResponse data;
 
-    @Data
+    @Getter
+    @Setter
     @NoArgsConstructor
     @AllArgsConstructor
     @Builder
     public static class DataResponse {
-
         private Long userId;
-
         private String name;
-
         private String email;
-
         private String nickname;
-
         private String profileUrl;
-
-        private String createdAt; // YYYY-MM-DD
-
+        private String createdAt;
         private Integer goalStudyTime;
-
         private String level;
-
         private String targetDateTitle;
-
-        private String targetDate; // YYYY-MM-DD
-
+        private String targetDate;
         private String determination;
+        private Integer todayStudyMinute;
     }
 }

@@ -9,6 +9,7 @@ import org.oreo.smore.domain.video.exception.MaxParticipantsExceededException;
 import org.oreo.smore.domain.video.exception.OwnerNotJoinedException;
 import org.oreo.smore.domain.video.exception.StudyRoomNotFoundException;
 import org.oreo.smore.domain.video.exception.WrongPasswordException;
+import org.oreo.smore.domain.video.service.UserIdentityService;
 import org.springframework.stereotype.Component;
 
 @Slf4j
@@ -18,9 +19,12 @@ public class StudyRoomValidator {
     // 스터디룸 입장 가능한지 체크 로직
 
     private final StudyRoomRepository studyRoomRepository;
+    private final UserIdentityService userIdentityService;
 
     public StudyRoom validateRoomAccess(Long roomId, JoinRoomRequest request, Long userId) {
-        log.info("스터디룸 입장 검증 시작 - 방ID: {}, 사용자: [{}], 사용자ID: {}", roomId, request.getIdentity(), userId);
+        String userNickname = userIdentityService.generateIdentityForUser(userId);
+
+        log.info("스터디룸 입장 검증 시작 - 방ID: {}, 닉네임: [{}], 사용자ID: {}", roomId, userNickname, userId);
 
         // 방 존재 여부 + 삭제 유무 확인
         StudyRoom studyRoom = validateRoomExists(roomId);
@@ -34,8 +38,8 @@ public class StudyRoomValidator {
         // 최대 인원 검증
         validateMaxParticipants(studyRoom, userId);
 
-        log.info("✅ 스터디룸 입장 검증 통과 - 방: [{}], 사용자: [{}], 방장여부: [{}]",
-                studyRoom.getTitle(), request.getIdentity(), isRoomOwner(studyRoom, userId));
+        log.info("✅ 스터디룸 입장 검증 통과 - 방: [{}], 닉네임: [{}], 방장여부: [{}]",
+                studyRoom.getTitle(), userNickname, isRoomOwner(studyRoom, userId));
 
         return studyRoom;
     }
