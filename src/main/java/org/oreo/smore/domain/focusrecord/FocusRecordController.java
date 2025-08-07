@@ -21,7 +21,7 @@ public class FocusRecordController {
             Authentication authentication
     ) {
         if (Long.parseLong(authentication.getPrincipal().toString()) != userId) {
-            return new ResponseEntity<>(HttpStatus.UNAUTHORIZED); // userId가 다르면 401
+            return new ResponseEntity<>(HttpStatus.FORBIDDEN); // userId가 다르면 403
         }
 
         FocusRecordsResponse response = focusRecordService.getFocusRecords(userId, tzOffset);
