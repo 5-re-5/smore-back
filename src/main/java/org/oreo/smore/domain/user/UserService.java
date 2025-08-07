@@ -1,20 +1,30 @@
 package org.oreo.smore.domain.user;
 
 import lombok.RequiredArgsConstructor;
+import org.oreo.smore.domain.studytime.StudyTime;
+import org.oreo.smore.domain.studytime.StudyTimeRepository;
 import org.oreo.smore.domain.user.dto.request.UserUpdateRequest;
-import org.oreo.smore.domain.user.dto.request.UserUpdateResponse;
+import org.oreo.smore.domain.user.dto.response.UserInfoResponse;
+import org.oreo.smore.domain.user.dto.response.UserUpdateResponse;
 import org.oreo.smore.global.common.CloudStorageManager;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
+import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeParseException;
+
+import java.util.UUID;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
 public class UserService {
     private final UserRepository repository;
+    private final StudyTimeRepository studyTimeRepository;
     private final CloudStorageManager cloudStorageManager;
 
     @Transactional
@@ -27,12 +37,15 @@ public class UserService {
         User u = User.builder()
                 .name(name)
                 .email(email)
-                .nickname(name + "@" + email)
+                .nickname(UUID.randomUUID().toString())
                 .createdAt(LocalDateTime.now())
                 .goalStudyTime(0)
                 .level("O")
                 .build();
-        return repository.save(u);
+
+        User savedUser = repository.save(u);
+        savedUser.setNickname("OREO" + savedUser.getUserId());
+        return repository.save(savedUser);
     }
 
     @Transactional(readOnly = true)
@@ -48,6 +61,9 @@ public class UserService {
 
         // 닉네임 변경
         if (req.getNickname() != null && !req.getNickname().isBlank()) {
+            if (repository.existsByNickname(req.getNickname())) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "이미 사용 중인 닉네임입니다.");
+            }
             user.setNickname(req.getNickname());
         }
 
@@ -88,6 +104,11 @@ public class UserService {
             user.setGoalStudyTime(req.getGoalStudyTime());
         }
 
+        // 각오
+        if (req.getDetermination() != null) {
+            user.setDetermination(req.getDetermination());
+        }
+
         User saved = repository.save(user);
 
         return UserUpdateResponse.builder()
@@ -107,5 +128,55 @@ public class UserService {
                 .build();
     }
 
+
+    @Transactional(readOnly = true)
+    public UserInfoResponse getUserInfo(Long userId) {
+        User user = repository.findById(userId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "해당 유저를 찾을 수 없습니다."));
+
+        // 오늘 공부 시간 계산
+        LocalDate today = LocalDate.now();
+        LocalDateTime startOfDay = today.atStartOfDay();
+        LocalDateTime endOfDay = today.atTime(23, 59, 59);
+
+        List<StudyTime> allRecords = studyTimeRepository.findAllByUserIdAndCreatedAtBetween(
+                userId,
+                startOfDay.minusDays(1),  // 하루 전까지도 시작할 수 있으므로
+                endOfDay.plusDays(1)      // 자정 넘어가는 케이스도 포함
+        );
+
+        int todayStudyMinutes = 0;
+
+        for (StudyTime record : allRecords) {
+            LocalDateTime start = record.getCreatedAt();
+            LocalDateTime end = record.getDeletedAt();
+
+            // 오늘 날짜 범위와 겹치는 구간만 계산
+            LocalDateTime effectiveStart = start.isBefore(startOfDay) ? startOfDay : start;
+            LocalDateTime effectiveEnd = end.isAfter(endOfDay) ? endOfDay : end;
+
+            if (!effectiveStart.isAfter(effectiveEnd)) {
+                todayStudyMinutes += Duration.between(effectiveStart, effectiveEnd).toMinutes();
+            }
+        }
+
+
+        return UserInfoResponse.builder()
+                .data(UserInfoResponse.DataResponse.builder()
+                        .userId(user.getUserId())
+                        .name(user.getName())
+                        .email(user.getEmail())
+                        .nickname(user.getNickname())
+                        .profileUrl(user.getProfileUrl())
+                        .createdAt(user.getCreatedAt().toLocalDate().toString())
+                        .goalStudyTime(user.getGoalStudyTime())
+                        .level(user.getLevel())
+                        .targetDateTitle(user.getTargetDateTitle())
+                        .targetDate(user.getTargetDate() != null ? user.getTargetDate().toLocalDate().toString() : null)
+                        .determination(user.getDetermination())
+                        .todayStudyMinute(todayStudyMinutes)
+                        .build())
+                .build();
+    }
 
 }

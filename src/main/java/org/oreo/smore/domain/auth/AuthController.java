@@ -18,7 +18,6 @@ import java.util.Arrays;
 
 @RestController
 @RequestMapping("/v1/auth")
-@CrossOrigin(origins = "http://localhost:3000", allowCredentials = "true")
 @RequiredArgsConstructor
 public class AuthController {
 
@@ -59,10 +58,11 @@ public class AuthController {
             HttpServletRequest request,
             HttpServletResponse response
     ) {
-        String refreshToken = extractTokenFromCookies(request);
 
-        if(refreshToken != null) {
-            tokenService.deleteByRefreshToken(refreshToken);
+        // 기존 refreshToken 삭제
+        String refresh = extractTokenFromCookies(request);
+        if(refresh != null) {
+            tokenService.deleteRefreshToken(refresh);
         }
 
         // 쿠키 만료
