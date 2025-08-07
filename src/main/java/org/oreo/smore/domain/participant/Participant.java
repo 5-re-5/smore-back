@@ -36,32 +36,74 @@ public class Participant {
     @Column(name = "left_at")
     private LocalDateTime leftAt;
 
-    @Column(name = "is_muted", nullable = false)
-    private Boolean isMuted = false;
-
     @Column(name = "is_banned", nullable = false)
     private Boolean isBanned = false;
+
+    @Column(name = "audio_enabled", nullable = false)
+    private Boolean audioEnabled = true; // 기본값: 마이크 켜짐
+
+    @Column(name = "video_enabled", nullable = false)
+    private Boolean videoEnabled = true; // 기본값: 카메라 켜짐
 
     @Builder
     public  Participant(Long roomId, Long userId) {
         this.roomId = roomId;
         this.userId = userId;
-        this.isMuted = false;
         this.isBanned = false;
+        this.audioEnabled = true;
+        this.videoEnabled = true;
 
         log.debug("새 참가자 객체 생성 - 방 ID: {}, 사용자ID: {}", roomId, userId);
     }
 
-    // 음소거 설정
-    public void mute() {
-        this.isMuted = true;
-        log.info("참가자 음소거 설정 - 방ID: {}, 사용자ID: {}", roomId, userId);
+    @PrePersist
+    protected void onCreate() {
+        if (joinedAt == null) {
+            joinedAt = LocalDateTime.now();
+            log.debug("@PrePersist - joinedAt 설정: {}", joinedAt);
+        }
     }
 
-    // 음소거 해제
-    public void unmute() {
-        this.isMuted = false;
-        log.info("참가자 음소거 해제 - 방ID: {}, 사용자ID: {}", roomId, userId);
+    // 오디오 활성화
+    public void enableAudio(String controllerType) {
+        this.audioEnabled = true;
+        log.info("참가자 오디오 활성화 - 방ID: {}, 사용자ID: {}, 제어자: {}",
+                roomId, userId, controllerType);
+    }
+
+    // 오디오 비활성화
+    public void disableAudio(String controllerType) {
+        this.audioEnabled = false;
+        log.info("참가자 오디오 비활성화 - 방ID: {}, 사용자ID: {}, 제어자: {}",
+                roomId, userId, controllerType);
+    }
+
+    // 비디오 활성화
+    public void enableVideo(String controllerType) {
+        this.videoEnabled = true;
+        log.info("참가자 비디오 활성화 - 방ID: {}, 사용자ID: {}, 제어자: {}",
+                roomId, userId, controllerType);
+    }
+
+    // 비디오 비활성화
+    public void disableVideo(String controllerType) {
+        this.videoEnabled = false;
+        log.info("참가자 비디오 비활성화 - 방ID: {}, 사용자ID: {}, 제어자: {}",
+                roomId, userId, controllerType);
+    }
+
+    // 미디어 상태 일괄 업데이트
+    public void updateMediaStatus(Boolean audioEnabled, Boolean videoEnabled, String controllerType) {
+        if (audioEnabled != null && !this.audioEnabled.equals(audioEnabled)) {
+            this.audioEnabled = audioEnabled;
+            log.info("참가자 오디오 상태 변경 - 방ID: {}, 사용자ID: {}, 오디오: {}, 제어자: {}",
+                    roomId, userId, audioEnabled, controllerType);
+        }
+        if (videoEnabled != null && !this.videoEnabled.equals(videoEnabled)) {
+            this.videoEnabled = videoEnabled;
+            log.info("참가자 비디오 상태 변경 - 방ID: {}, 사용자ID: {}, 비디오: {}, 제어자: {}",
+                    roomId, userId, videoEnabled, controllerType);
+        }
     }
 
     // 강퇴 처리
@@ -94,10 +136,29 @@ public class Participant {
         return isBanned;
     }
 
-    // 음소거 상태인지 확인
+    // 음소거 설정 (방장용 - 기존 호환성)
+    public void mute() {
+        disableAudio("방장");
+    }
+
+    // 음소거 해제 (방장용 - 기존 호환성)
+    public void unmute() {
+        enableAudio("방장");
+    }
+
     public boolean isMutedInRoom() {
+        boolean muted = !audioEnabled;
         log.debug("참가자 음소거 상태 확인 - 방ID: {}, 사용자ID: {}, 음소거됨: {}",
-                roomId, userId, isMuted);
-        return isMuted;
+                roomId, userId, muted);
+        return muted;
+    }
+
+    // 🔥 새로운 상태 확인 메서드들
+    public boolean isAudioEnabled() {
+        return audioEnabled;
+    }
+
+    public boolean isVideoEnabled() {
+        return videoEnabled;
     }
 }

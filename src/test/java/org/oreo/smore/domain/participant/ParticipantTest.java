@@ -4,8 +4,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import java.time.LocalDateTime;
-
 import static org.assertj.core.api.Assertions.*;
 
 @DisplayName("Participant 엔티티 테스트")
@@ -33,33 +31,39 @@ class ParticipantTest {
         // When & Then
         assertThat(participant.getRoomId()).isEqualTo(roomId);
         assertThat(participant.getUserId()).isEqualTo(userId);
-        assertThat(participant.getIsMuted()).isFalse();
-        assertThat(participant.getIsBanned()).isFalse();
+        // 오디오/비디오 기본값 확인
+        assertThat(participant.isAudioEnabled()).isTrue();
+        assertThat(participant.isVideoEnabled()).isTrue();
+        // 음소거/강퇴 상태 확인
+        assertThat(participant.isMutedInRoom()).isFalse();
+        assertThat(participant.isBannedFromRoom()).isFalse();
+        // 시간 필드 확인
         assertThat(participant.getLeftAt()).isNull();
         assertThat(participant.getJoinedAt()).isNull(); // @CreatedDate는 실제 저장시에만 설정됨
 
         System.out.println("✅ 참가자 기본값 설정 확인 완료");
-        System.out.println("   - 음소거 상태: " + participant.getIsMuted());
-        System.out.println("   - 강퇴 상태: " + participant.getIsBanned());
+        System.out.println("   - 오디오 상태: " + participant.isAudioEnabled());
+        System.out.println("   - 비디오 상태: " + participant.isVideoEnabled());
+        System.out.println("   - 음소거 상태: " + participant.isMutedInRoom());
+        System.out.println("   - 강퇴 상태: " + participant.isBannedFromRoom());
         System.out.println("   - 퇴장 시간: " + participant.getLeftAt());
     }
-
 
     @Test
     @DisplayName("참가자 음소거 설정 테스트")
     void 참가자_음소거_설정_테스트() {
         // Given
-        assertThat(participant.getIsMuted()).isFalse();
+        assertThat(participant.isAudioEnabled()).isTrue();
 
         // When
         participant.mute();
 
         // Then
-        assertThat(participant.getIsMuted()).isTrue();
         assertThat(participant.isMutedInRoom()).isTrue();
+        assertThat(participant.isAudioEnabled()).isFalse();
 
         System.out.println("✅ 참가자 음소거 설정 테스트 완료");
-        System.out.println("   - 음소거 상태: " + participant.getIsMuted());
+        System.out.println("   - 음소거 상태: " + participant.isMutedInRoom());
     }
 
     @Test
@@ -67,17 +71,17 @@ class ParticipantTest {
     void 참가자_음소거_해제_테스트() {
         // Given
         participant.mute();
-        assertThat(participant.getIsMuted()).isTrue();
+        assertThat(participant.isMutedInRoom()).isTrue();
 
         // When
         participant.unmute();
 
         // Then
-        assertThat(participant.getIsMuted()).isFalse();
         assertThat(participant.isMutedInRoom()).isFalse();
+        assertThat(participant.isAudioEnabled()).isTrue();
 
         System.out.println("✅ 참가자 음소거 해제 테스트 완료");
-        System.out.println("   - 음소거 상태: " + participant.getIsMuted());
+        System.out.println("   - 오디오 상태: " + participant.isAudioEnabled());
     }
 
     @Test
@@ -116,28 +120,6 @@ class ParticipantTest {
         System.out.println("✅ 강퇴당한 참가자 방 존재 확인 완료");
         System.out.println("   - 방에 있음: " + participant.isInRoom());
         System.out.println("   - 강퇴됨: " + participant.isBannedFromRoom());
-    }
-
-    @Test
-    @DisplayName("음소거 상태 토글 테스트")
-    void 음소거_상태_토글_테스트() {
-        // Given
-        assertThat(participant.isMutedInRoom()).isFalse();
-
-        // When - 음소거 설정
-        participant.mute();
-
-        // Then
-        assertThat(participant.isMutedInRoom()).isTrue();
-
-        // When - 음소거 해제
-        participant.unmute();
-
-        // Then
-        assertThat(participant.isMutedInRoom()).isFalse();
-
-        System.out.println("✅ 음소거 상태 토글 테스트 완료");
-        System.out.println("   - 최종 음소거 상태: " + participant.isMutedInRoom());
     }
 
     @Test
