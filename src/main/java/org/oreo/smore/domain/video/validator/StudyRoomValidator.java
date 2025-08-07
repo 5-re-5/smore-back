@@ -5,10 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.oreo.smore.domain.studyroom.StudyRoom;
 import org.oreo.smore.domain.studyroom.StudyRoomRepository;
 import org.oreo.smore.domain.video.dto.JoinRoomRequest;
-import org.oreo.smore.domain.video.exception.MaxParticipantsExceededException;
-import org.oreo.smore.domain.video.exception.OwnerNotJoinedException;
-import org.oreo.smore.domain.video.exception.StudyRoomNotFoundException;
-import org.oreo.smore.domain.video.exception.WrongPasswordException;
+import org.oreo.smore.domain.video.exception.*;
 import org.oreo.smore.domain.video.service.UserIdentityService;
 import org.springframework.stereotype.Component;
 
@@ -51,6 +48,36 @@ public class StudyRoomValidator {
         validatePassword(studyRoom, request.getPassword());
 
         return studyRoom;
+    }
+
+    // 방장 권한 검증
+    public StudyRoom validateOwnerPermission(Long roomId, Long userId) {
+        log.info("방장 권한 검증 - 방ID: {}, 사용자ID: {}", roomId, userId);
+
+        StudyRoom studyRoom = validateRoomExists(roomId);
+        validateIsRoomOwner(studyRoom, userId);
+
+        log.info("✅ 방장 권한 검증 통과 - 방ID: {}, 방장ID: {}", roomId, userId);
+        return studyRoom;
+    }
+
+    public void validateOwnerPermission(StudyRoom studyRoom, Long userId) {
+        log.debug("방장 권한 검증 - 방ID: {}, 사용자ID: {}", studyRoom.getRoomId(), userId);
+        validateIsRoomOwner(studyRoom, userId);
+        log.debug("✅ 방장 권한 검증 통과");
+    }
+
+    private void validateIsRoomOwner(StudyRoom studyRoom, Long userId) {
+        if (userId == null) {
+            log.warn("❌ 사용자 ID가 null - 방장 권한 검증 실패");
+            throw new OwnerPermissionRequiredException("사용자 정보가 없습니다.");
+        }
+
+        if (!isRoomOwner(studyRoom, userId)) {
+            log.warn("❌ 방장 권한 없음 - 방ID: {}, 실제방장ID: {}, 요청사용자ID: {}",
+                    studyRoom.getRoomId(), studyRoom.getUserId(), userId);
+            throw new OwnerPermissionRequiredException("방장만 수행할 수 있는 작업입니다.");
+        }
     }
 
     // 방 존재 여부 + 삭제 유무 확인
