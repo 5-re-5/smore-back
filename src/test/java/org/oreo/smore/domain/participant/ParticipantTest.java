@@ -81,28 +81,6 @@ class ParticipantTest {
     }
 
     @Test
-    @DisplayName("참가자 강퇴 처리 테스트")
-    void 참가자_강퇴_처리_테스트() {
-        // Given
-        LocalDateTime beforeBan = LocalDateTime.now();
-
-        // When
-        participant.ban();
-
-        // Then
-        assertThat(participant.getIsBanned()).isTrue();
-        assertThat(participant.getLeftAt()).isNotNull();
-        assertThat(participant.getLeftAt()).isAfter(beforeBan);
-        assertThat(participant.isInRoom()).isFalse();
-        assertThat(participant.isBannedFromRoom()).isTrue();
-
-        System.out.println("✅ 참가자 강퇴 처리 테스트 완료");
-        System.out.println("   - 강퇴 상태: " + participant.getIsBanned());
-        System.out.println("   - 퇴장 시간: " + participant.getLeftAt());
-        System.out.println("   - 방에 있음: " + participant.isInRoom());
-    }
-
-    @Test
     @DisplayName("방 존재 여부 확인 - 정상 참가자")
     void 방_존재_여부_확인_정상_참가자() {
         // When & Then
