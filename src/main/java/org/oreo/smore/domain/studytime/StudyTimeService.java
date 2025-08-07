@@ -1,6 +1,7 @@
 package org.oreo.smore.domain.studytime;
 
 import lombok.RequiredArgsConstructor;
+import org.oreo.smore.domain.studytime.dto.response.StudyTimeStatisticsResponse;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -30,5 +31,9 @@ public class StudyTimeService {
 
         latestStudyTime.setDeletedAt(LocalDateTime.now());
         studyTimeRepository.save(latestStudyTime);
+    }
+
+    public StudyTimeStatisticsResponse getStatistics(Long userId) {
+        return null;
     }
 }
