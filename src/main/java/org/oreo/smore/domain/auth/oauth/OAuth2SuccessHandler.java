@@ -19,9 +19,7 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
 
     private final JwtTokenProvider jwtProvider;
     private final TokenService tokenService;
-
-    @Value("${app.oauth2.frontend.success-redirect-url}")
-    private String successRedirectUrl;
+    private final String successRedirectUrl;    // final로 변경
 
     @Override
     public void onAuthenticationSuccess(HttpServletRequest request,
