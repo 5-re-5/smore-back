@@ -31,6 +31,8 @@ public class FocusRecordService {
             .collect(Collectors.toUnmodifiableList());
 
     private final FocusRecordRepository focusRecordRepository;
+    private final FocusFeedbackService focusFeedbackService;
+
 
     public FocusRecordsResponse getFocusRecords(Long userId, String timeZoneOffset) {
         ZoneOffset clientOffset = ZoneOffset.of(timeZoneOffset);
@@ -169,8 +171,7 @@ public class FocusRecordService {
     private String generateFeedback(
             FocusTimeDto best, FocusTimeDto worst,
             int avgDuration, FocusTrackDto track) {
-        // TODO: GMS 연동 필요
-        return "아침형 스타일입니다. 등교 전 오전에 50분 집중 후 10분 휴식을 추천드립니다 😊";
+        return focusFeedbackService.generateOneLineFeedback(best, worst, avgDuration, track);
     }
 
     private record HourlyStats(
