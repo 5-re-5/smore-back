@@ -68,6 +68,9 @@ public class StudyRoom {
     @Column(name = "livekit_room_id")
     private String liveKitRoomId;
 
+    @Column(name = "is_all_muted", nullable = false)
+    private Boolean isAllMuted = false; // 기본값: 전체 음소거 비활성화
+
     // soft delete용
     public void delete() {
         this.deletedAt = LocalDateTime.now();
@@ -87,6 +90,21 @@ public class StudyRoom {
         return liveKitRoomId != null && !liveKitRoomId.trim().isEmpty();
     }
 
+    // 전체 음소거 활성화
+    public void enableAllMute() {
+        this.isAllMuted = true;
+    }
+
+    // 전체 음소거 비활성화
+    public void disableAllMute() {
+        this.isAllMuted = false;
+    }
+
+    // 전체 음소거 상태 확인
+    public boolean isAllMuted() {
+        return isAllMuted != null ? isAllMuted : false;
+    }
+
     // 테스트용 생성자
     public StudyRoom(Long userId, Long roomId, String title, StudyRoomCategory category) {
         this.userId = userId;
@@ -100,8 +118,8 @@ public class StudyRoom {
     public StudyRoom(Long roomId, Long userId, String title, String description, String password,
                      Integer maxParticipants, String thumbnailUrl, String tag,
                      StudyRoomCategory category, Integer focusTime, Integer breakTime,
-                     String inviteHashCode, String liveKitRoomId) {
-        this.roomId = roomId;  // 이 줄 추가
+                     String inviteHashCode, String liveKitRoomId, Boolean isAllMuted) {
+        this.roomId = roomId;
         this.userId = userId;
         this.title = title;
         this.description = description;
@@ -114,5 +132,6 @@ public class StudyRoom {
         this.breakTime = breakTime;
         this.inviteHashCode = inviteHashCode;
         this.liveKitRoomId = liveKitRoomId;
+        this.isAllMuted = isAllMuted != null ? isAllMuted : false;
     }
 }
