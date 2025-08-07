@@ -42,7 +42,7 @@ public class AuthController {
                 ResponseCookie.from("accessToken", newAccess)
                         .httpOnly(true).secure(true)
                         .path("/").maxAge(jwtProvider.getAccessTokenExpMs() / 1000)
-                        .sameSite("Lax")
+                        .sameSite("None")
                         .build()
                         .toString()
         );
