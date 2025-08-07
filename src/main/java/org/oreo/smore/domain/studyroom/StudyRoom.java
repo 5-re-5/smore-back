@@ -119,7 +119,7 @@ public class StudyRoom {
                      Integer maxParticipants, String thumbnailUrl, String tag,
                      StudyRoomCategory category, Integer focusTime, Integer breakTime,
                      String inviteHashCode, String liveKitRoomId, Boolean isAllMuted) {
-        this.roomId = roomId;  // 이 줄 추가
+        this.roomId = roomId;
         this.userId = userId;
         this.title = title;
         this.description = description;
