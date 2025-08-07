@@ -238,12 +238,14 @@ public class StudyRoomCreationService {
     private void logCreationStatistics(StudyRoom studyRoom) {
         log.info("스터디룸 생성 통계 - " +
                         "방ID: {}, " +
+                        "방장ID: {}, " +
                         "카테고리: [{}], " +
                         "비밀방여부: {}, " +
                         "최대인원: {}명, " +
                         "타이머설정: {}, " +
                         "생성시간: {}",
                 studyRoom.getRoomId(),
+                studyRoom.getUserId(),
                 studyRoom.getCategory(),
                 studyRoom.getPassword() != null ? "예" : "아니오",
                 studyRoom.getMaxParticipants(),
