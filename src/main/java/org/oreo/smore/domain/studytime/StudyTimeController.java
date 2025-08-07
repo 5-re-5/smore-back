@@ -1,6 +1,7 @@
 package org.oreo.smore.domain.studytime;
 
 import lombok.RequiredArgsConstructor;
+import org.oreo.smore.domain.studytime.dto.response.StudyTimeStatisticsResponse;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -32,5 +33,17 @@ public class StudyTimeController {
         }
         studyTimeService.updateStudyTime(userId);
         return ResponseEntity.ok("OK");
+    }
+
+    @GetMapping("/v1/study-times/statistics/{userId}")
+    public ResponseEntity<StudyTimeStatisticsResponse> getStatistics(
+            @PathVariable Long userId,
+            Authentication authentication
+    ) {
+        if (Long.parseLong(authentication.getPrincipal().toString()) != userId) {
+            return new ResponseEntity<>(HttpStatus.UNAUTHORIZED); // userId가 다르면 401
+        }
+
+        return ResponseEntity.ok(studyTimeService.getStatistics(userId));
     }
 }

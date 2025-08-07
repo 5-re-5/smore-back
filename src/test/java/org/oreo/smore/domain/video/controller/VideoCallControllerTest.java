@@ -73,7 +73,6 @@ class VideoCallControllerTest {
 
         // 입장 요청
         입장요청 = JoinRoomRequest.builder()
-                .identity("테스트사용자")
                 .canPublish(true)
                 .canSubscribe(true)
                 .build();
@@ -82,7 +81,6 @@ class VideoCallControllerTest {
         토큰응답 = TokenResponse.builder()
                 .accessToken("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.test.token")
                 .roomName("study-room-123")
-                .identity("테스트사용자")
                 .canPublish(true)
                 .canSubscribe(true)
                 .expiresAt(LocalDateTime.now().plusSeconds(3600))
@@ -219,7 +217,6 @@ class VideoCallControllerTest {
     void 잘못된_요청_데이터_400에러() throws Exception {
         // given - identity가 빈 문자열인 잘못된 요청
         JoinRoomRequest 잘못된요청 = JoinRoomRequest.builder()
-                .identity("")  // 빈 문자열 (validation 오류)
                 .canPublish(true)
                 .build();
 
@@ -239,7 +236,6 @@ class VideoCallControllerTest {
         Long 사용자ID = 1L;
 
         JoinRoomRequest 한글요청 = JoinRoomRequest.builder()
-                .identity("김철수")
                 .canPublish(true)
                 .canSubscribe(true)
                 .build();
@@ -247,7 +243,6 @@ class VideoCallControllerTest {
         TokenResponse 한글토큰응답 = TokenResponse.builder()
                 .accessToken("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.korean.token")
                 .roomName("study-room-123")
-                .identity("김철수")
                 .canPublish(true)
                 .canSubscribe(true)
                 .expiresAt(LocalDateTime.now().plusSeconds(3600))

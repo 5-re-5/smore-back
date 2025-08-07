@@ -9,8 +9,11 @@ import org.oreo.smore.domain.video.dto.JoinRoomRequest;
 import org.oreo.smore.domain.video.dto.TokenRequest;
 import org.oreo.smore.domain.video.dto.TokenResponse;
 import org.oreo.smore.domain.video.service.LiveKitTokenService;
+import org.oreo.smore.domain.video.service.UserIdentityService;
 import org.oreo.smore.domain.video.validator.StudyRoomValidator;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 @Slf4j
@@ -22,14 +25,30 @@ public class VideoCallController {
     private final StudyRoomValidator studyRoomValidator;
     private final LiveKitTokenService tokenService;
     private final StudyRoomRepository studyRoomRepository;
+    private final UserIdentityService userIdentityService;
 
     // 스터디룸 입장 토큰 발급
     @PostMapping("/{roomId}/join")
     public ResponseEntity<TokenResponse> joinRoom(
             @PathVariable Long roomId,
             @RequestParam Long userId,
-            @Valid @RequestBody JoinRoomRequest request) {
-        log.info("스터디룸 입장 요청 - 방ID: {}, 사용자: [{}]", roomId, request.getIdentity());
+            @Valid @RequestBody JoinRoomRequest request,
+            Authentication authentication) {
+
+        try {
+            String principal = authentication.getPrincipal().toString();
+            if (!principal.equals(userId.toString())) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+            }
+        } catch (Exception e) {
+            log.error("Authentication validation failed: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        // User 테이블에서 nickname 가져오기
+        String userNickname = userIdentityService.generateIdentityForUser(userId);
+
+        log.info("스터디룸 입장 요청 - 방 ID: {}, 사용자ID: {}, 닉네임: {}", roomId, userId, userNickname);
 
         // 방 입장 검증
         StudyRoom studyRoom = studyRoomValidator.validateRoomAccess(roomId, request, userId);
@@ -37,11 +56,15 @@ public class VideoCallController {
         studyRoomValidator.logRoomInfo(studyRoom);
         // LiveKit 방ID
         String liveKitRoomName = ensureLiveKitRoom(studyRoom);
+        if (liveKitRoomName == null || liveKitRoomName.trim().isEmpty()) {
+            log.error("❌ LiveKit 방 ID가 없습니다 - 방ID: {}", roomId);
+            throw new IllegalStateException("LiveKit 방 정보가 올바르지 않습니다.");
+        }
 
         // LiveKit 토큰 생성 요청
         TokenRequest tokenRequest = TokenRequest.builder()
                 .roomName(liveKitRoomName)
-                .identity(request.getIdentity())
+                .identity(userNickname)
                 .canPublish(request.getCanPublish())
                 .canSubscribe(request.getCanSubscribe())
                 .tokenExpirySeconds(request.getTokenExpirySeconds())
@@ -50,7 +73,7 @@ public class VideoCallController {
         TokenResponse tokenResponse = tokenService.generateToken(tokenRequest);
 
         log.info("✅ 스터디룸 입장 성공 - 방ID: {}, 사용자: [{}], 방장여부: [{}]",
-                roomId, request.getIdentity(), studyRoomValidator.isRoomOwner(studyRoom, userId));
+                roomId, userNickname, studyRoomValidator.isRoomOwner(studyRoom, userId));
 
 
         return ResponseEntity.ok(tokenResponse);
@@ -61,10 +84,25 @@ public class VideoCallController {
     public ResponseEntity<TokenResponse> rejoinRoom(
             @PathVariable Long roomId,
             @RequestParam Long userId,
-            @Valid @RequestBody JoinRoomRequest request
+            @Valid @RequestBody JoinRoomRequest request,
+            Authentication authentication
     ) {
-        log.info("스터디룸 토큰 재발급 요청 - 방ID: {}, 사용자ID: {}, 사용자: [{}]",
-                roomId, userId, request.getIdentity());
+
+        try {
+            String principal = authentication.getPrincipal().toString();
+            if (!principal.equals(userId.toString())) {
+                log.warn("User ID mismatch in rejoin - Principal: {}, Requested: {}", principal, userId);
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+            }
+        } catch (Exception e) {
+            log.error("Authentication validation failed in rejoin: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        String userNickname = userIdentityService.generateIdentityForUser(userId);
+
+        log.info("스터디룸 토큰 재발급 요청 - 방ID: {}, 사용자ID: {}, 닉네임: [{}]",
+                roomId, userId, userNickname);
 
         StudyRoom studyRoom = studyRoomValidator.validateRoomAccess(roomId, request, userId);
 
@@ -75,10 +113,10 @@ public class VideoCallController {
         // 토큰 재발급
         TokenResponse tokenResponse = tokenService.regenerateToken(
                 liveKitRoomName,
-                request.getIdentity()
+                userNickname
         );
-        log.info("✅ 스터디룸 토큰 재발급 성공 - DB방ID: {}, LiveKit방: [{}], 사용자: [{}]",
-                roomId, liveKitRoomName, request.getIdentity());
+        log.info("✅ 스터디룸 토큰 재발급 성공 - DB방ID: {}, LiveKit방: [{}], 닉네임: [{}]",
+                roomId, liveKitRoomName, userNickname);
 
         return ResponseEntity.ok(tokenResponse);
     }

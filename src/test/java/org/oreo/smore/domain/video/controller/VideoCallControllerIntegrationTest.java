@@ -80,7 +80,6 @@ class VideoCallControllerIntegrationTest {
     void 실제_LiveKit_서버_방장_입장_테스트() throws Exception {
         // given
         JoinRoomRequest 방장요청 = JoinRoomRequest.builder()
-                .identity("실제방장")
                 .canPublish(true)
                 .canSubscribe(true)
                 .build();
@@ -110,7 +109,6 @@ class VideoCallControllerIntegrationTest {
     void 실제_LiveKit_서버_참가자_입장_테스트() throws Exception {
         // given - 먼저 방장이 입장해야 함
         JoinRoomRequest 방장요청 = JoinRoomRequest.builder()
-                .identity("실제방장")
                 .canPublish(true)
                 .canSubscribe(true)
                 .build();
@@ -125,7 +123,6 @@ class VideoCallControllerIntegrationTest {
 
         // 참가자 입장 요청
         JoinRoomRequest 참가자요청 = JoinRoomRequest.builder()
-                .identity("실제참가자")
                 .canPublish(true)
                 .canSubscribe(true)
                 .build();
@@ -148,7 +145,6 @@ class VideoCallControllerIntegrationTest {
     void 방장_미입장_상태에서_참가자_입장_시도_실패() throws Exception {
         // given - 방장이 입장하지 않은 상태
         JoinRoomRequest 참가자요청 = JoinRoomRequest.builder()
-                .identity("먼저입장시도참가자")
                 .canPublish(true)
                 .canSubscribe(true)
                 .build();
@@ -169,7 +165,6 @@ class VideoCallControllerIntegrationTest {
     void 실제_토큰_길이_검증() throws Exception {
         // given
         JoinRoomRequest request = JoinRoomRequest.builder()
-                .identity("토큰검증테스트")
                 .canPublish(true)
                 .canSubscribe(true)
                 .tokenExpirySeconds(7200)  // 2시간
@@ -198,7 +193,6 @@ class VideoCallControllerIntegrationTest {
     void 실제_LiveKit_서버_비밀방_입장_테스트() throws Exception {
         // given
         JoinRoomRequest 방장요청 = JoinRoomRequest.builder()
-                .identity("비밀방방장")
                 .canPublish(true)
                 .canSubscribe(true)
                 .password("1234")  // 올바른 비밀번호
@@ -222,7 +216,6 @@ class VideoCallControllerIntegrationTest {
     void 실제_LiveKit_서버_토큰_재발급_테스트() throws Exception {
         // given - 첫 번째 토큰 발급
         JoinRoomRequest 첫번째요청 = JoinRoomRequest.builder()
-                .identity("재발급테스트")
                 .canPublish(true)
                 .canSubscribe(true)
                 .build();
@@ -236,7 +229,6 @@ class VideoCallControllerIntegrationTest {
 
         // 두 번째 토큰 발급 (재발급)
         JoinRoomRequest 두번째요청 = JoinRoomRequest.builder()
-                .identity("재발급테스트")
                 .canPublish(false)  // 권한 변경
                 .canSubscribe(true)
                 .build();
@@ -258,7 +250,6 @@ class VideoCallControllerIntegrationTest {
     void 실제_토큰_유효성_검증() throws Exception {
         // given
         JoinRoomRequest request = JoinRoomRequest.builder()
-                .identity("유효성검증테스트")
                 .canPublish(true)
                 .canSubscribe(true)
                 .tokenExpirySeconds(3600)
