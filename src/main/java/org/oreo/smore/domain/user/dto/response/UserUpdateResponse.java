@@ -1,4 +1,4 @@
-package org.oreo.smore.domain.user.dto.request;
+package org.oreo.smore.domain.user.dto.response;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

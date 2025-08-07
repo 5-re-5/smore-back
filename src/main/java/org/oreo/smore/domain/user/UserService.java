@@ -2,7 +2,7 @@ package org.oreo.smore.domain.user;
 
 import lombok.RequiredArgsConstructor;
 import org.oreo.smore.domain.user.dto.request.UserUpdateRequest;
-import org.oreo.smore.domain.user.dto.request.UserUpdateResponse;
+import org.oreo.smore.domain.user.dto.response.UserUpdateResponse;
 import org.oreo.smore.global.common.CloudStorageManager;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -91,6 +91,11 @@ public class UserService {
         // 목표 공부 시간
         if (req.getGoalStudyTime() != null) {
             user.setGoalStudyTime(req.getGoalStudyTime());
+        }
+
+        // 각오
+        if (req.getDetermination() != null) {
+            user.setDetermination(req.getDetermination());
         }
 
         User saved = repository.save(user);

@@ -3,7 +3,7 @@ package org.oreo.smore.domain.user;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.oreo.smore.domain.user.dto.request.UserUpdateRequest;
-import org.oreo.smore.domain.user.dto.request.UserUpdateResponse;
+import org.oreo.smore.domain.user.dto.response.UserUpdateResponse;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
