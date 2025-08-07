@@ -29,7 +29,7 @@ public interface ParticipantRepository extends JpaRepository<Participant, Long> 
     long countActiveParticipantsByRoomId(@Param("roomId") Long roomId);
     
     // 특정 방의 음소거된 참가자 조회
-    @Query("SELECT p FROM Participant p WHERE p.roomId = :roomId AND p.leftAt IS NULL AND p.isBanned = false AND p.isMuted = true")
+    @Query("SELECT p FROM Participant p WHERE p.roomId = :roomId AND p.leftAt IS NULL AND p.isBanned = false AND p.audioEnabled = false")
     List<Participant> findMutedParticipantsByRoomId(@Param("roomId") Long roomId);
 
     // 특정 방의 참가 이력 삭제 (방 삭제시 사용)
