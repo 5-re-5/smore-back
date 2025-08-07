@@ -58,4 +58,11 @@ public class TokenService {
         return tokenRepository.findByRefreshToken(refreshToken)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.FORBIDDEN));
     }
+
+    public void deleteByRefreshToken(String refreshToken) {
+        try {
+            Token token = loadTokenEntity(refreshToken);
+            tokenRepository.delete(token);
+        } catch (ResponseStatusException ignored) { }
+    }
 }

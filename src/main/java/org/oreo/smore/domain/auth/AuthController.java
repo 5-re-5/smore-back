@@ -58,6 +58,7 @@ public class AuthController {
             HttpServletRequest request,
             HttpServletResponse response
     ) {
+
         // 기존 refreshToken 삭제
         String refresh = extractTokenFromCookies(request);
         if(refresh != null) {
