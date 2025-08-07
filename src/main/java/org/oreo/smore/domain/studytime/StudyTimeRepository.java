@@ -12,4 +12,6 @@ public interface StudyTimeRepository extends JpaRepository<StudyTime, Long> {
     Optional<StudyTime> findTopByUserIdOrderByCreatedAtDesc(Long userId);
 
     List<StudyTime> findAllByUserIdAndCreatedAtBetween(Long userId, LocalDateTime start, LocalDateTime end);
+
+    List<StudyTime> findAllByUserId(Long userId);
 }
