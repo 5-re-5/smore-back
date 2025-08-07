@@ -30,6 +30,11 @@ spring:
             redirect-uri: ${OAUTH2_REDIRECT_URI:${baseUrl}/login/oauth2/code/{registrationId}}
             client-name: Google
 
+app:
+  oauth2:
+    frontend:
+      success-redirect-url: ${FRONTEND_OAUTH2_SUCCESS_REDIRECT_URL:http://localhost:3000}
+
 jwt:
   access-token-secret: ${ACCESS_TOKEN_SECRET_KEY}
   refresh-token-secret: ${REFRESH_TOKEN_SECRET_KEY}

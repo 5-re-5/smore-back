@@ -1,5 +1,6 @@
 package org.oreo.smore.domain.auth;
 
+import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.AllArgsConstructor;
@@ -13,9 +14,10 @@ import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Arrays;
+
 @RestController
 @RequestMapping("/v1/auth")
-@CrossOrigin(origins = "http://localhost:3000", allowCredentials = "true")
 @RequiredArgsConstructor
 public class AuthController {
 
@@ -56,7 +58,12 @@ public class AuthController {
             HttpServletRequest request,
             HttpServletResponse response
     ) {
-        // ... refreshToken 삭제 로직 생략 ...
+
+        // 기존 refreshToken 삭제
+        String refresh = extractTokenFromCookies(request);
+        if(refresh != null) {
+            tokenService.deleteRefreshToken(refresh);
+        }
 
         // 쿠키 만료
         response.addHeader(HttpHeaders.SET_COOKIE,
@@ -88,5 +95,15 @@ public class AuthController {
     @AllArgsConstructor
     static class DataResponse<T> {
         private T data;
+    }
+
+    private String extractTokenFromCookies(HttpServletRequest request) {
+        Cookie[] cookies = request.getCookies();
+        if (cookies == null) return null;
+        return Arrays.stream(cookies)
+                .filter(c -> "refreshToken".equals(c.getName()))
+                .map(Cookie::getValue)
+                .findFirst()
+                .orElse(null);
     }
 }
