@@ -16,6 +16,8 @@ import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeParseException;
+
+import java.util.UUID;
 import java.util.List;
 
 @Service
@@ -35,12 +37,15 @@ public class UserService {
         User u = User.builder()
                 .name(name)
                 .email(email)
-                .nickname(name + "@" + email)
+                .nickname(UUID.randomUUID().toString())
                 .createdAt(LocalDateTime.now())
                 .goalStudyTime(0)
                 .level("O")
                 .build();
-        return repository.save(u);
+
+        User savedUser = repository.save(u);
+        savedUser.setNickname("OREO" + savedUser.getUserId());
+        return repository.save(savedUser);
     }
 
     @Transactional(readOnly = true)
