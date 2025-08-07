@@ -100,5 +100,4 @@ public class Participant {
                 roomId, userId, isMuted);
         return isMuted;
     }
-
 }

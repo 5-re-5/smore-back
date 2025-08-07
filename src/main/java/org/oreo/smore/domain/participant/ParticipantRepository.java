@@ -38,4 +38,5 @@ public interface ParticipantRepository extends JpaRepository<Participant, Long> 
     // 특정 사용자의 특정 방 참가 이력 삭제
     void deleteByRoomIdAndUserId(Long roomId, Long userId);
 
+    long countByRoomIdAndLeftAtIsNull(Long roomId);
 }

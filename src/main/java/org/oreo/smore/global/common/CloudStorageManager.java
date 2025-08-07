@@ -33,7 +33,8 @@ public class CloudStorageManager {
             blobClient.setHttpHeaders(headers);
         }
 
-        return blobClient.getBlobUrl();
+        // 캐시 무효화를 위해 타임스탬프 쿼리 파라미터 추가
+        return blobClient.getBlobUrl() + "?t=" + System.currentTimeMillis();
     }
 
     /**
@@ -64,7 +65,8 @@ public class CloudStorageManager {
             blobClient.setHttpHeaders(headers);
         }
 
-        return blobClient.getBlobUrl();
+        // 캐시 무효화를 위해 타임스탬프 쿼리 파라미터 추가
+        return blobClient.getBlobUrl() + "?t=" + System.currentTimeMillis();
     }
 
     public void deleteRoomImage(Long roomId) {

@@ -30,4 +30,7 @@ public class UserUpdateRequest {
     @Min(value = 0, message = "목표 공부시간은 0 이상이어야 합니다.")
     @Max(value = 24, message = "목표 공부시간은 24 이하이어야 합니다.")
     private Integer goalStudyTime;
+
+    @Size(max = 50, message = "각오는 최대 50자까지 가능합니다.")
+    private String determination;
 }

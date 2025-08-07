@@ -5,6 +5,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.oreo.smore.domain.auth.jwt.JwtTokenProvider;
 import org.oreo.smore.domain.auth.token.TokenService;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseCookie;
 import org.springframework.security.core.Authentication;
@@ -18,6 +19,7 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
 
     private final JwtTokenProvider jwtProvider;
     private final TokenService tokenService;
+    private final String successRedirectUrl;    // final로 변경
 
     @Override
     public void onAuthenticationSuccess(HttpServletRequest request,
@@ -51,9 +53,8 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
                 .build();
         response.addHeader(HttpHeaders.SET_COOKIE, refreshTokenCookie.toString());
 
-        // TODO : 프론트 url 확정 시, 수정 필요(redirect URL)
         String redirectUrl = String.format(
-                "http://localhost:3000/studyList?userId=%s",
+                successRedirectUrl + "/study-list?userId=%s",
                 providerId
         );
         response.sendRedirect(redirectUrl);

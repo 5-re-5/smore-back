@@ -3,7 +3,8 @@ package org.oreo.smore.domain.user;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.oreo.smore.domain.user.dto.request.UserUpdateRequest;
-import org.oreo.smore.domain.user.dto.request.UserUpdateResponse;
+import org.oreo.smore.domain.user.dto.response.UserInfoResponse;
+import org.oreo.smore.domain.user.dto.response.UserUpdateResponse;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -14,12 +15,11 @@ import org.springframework.web.server.ResponseStatusException;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/v1")
 public class UserController {
 
     private final UserService userService;
 
-    @PatchMapping(value = "/users/{userId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PatchMapping(value = "/v1/users/{userId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<UserUpdateResponse> updateUser(
             @PathVariable Long userId,
             @Valid @ModelAttribute UserUpdateRequest userUpdateRequest,
@@ -47,4 +47,17 @@ public class UserController {
 
         return ResponseEntity.ok(userService.updateUser(userId, userUpdateRequest));
     }
+
+    @GetMapping("/v1/users/{userId}")
+    public ResponseEntity<UserInfoResponse> getUserInfo(
+            @PathVariable Long userId,
+            Authentication authentication) {
+
+        if (Long.parseLong(authentication.getPrincipal().toString()) != userId) {
+            return new ResponseEntity<>(HttpStatus.UNAUTHORIZED); // userId가 다르면 401
+        }
+
+        return ResponseEntity.ok(userService.getUserInfo(userId));
+    }
+
 }
