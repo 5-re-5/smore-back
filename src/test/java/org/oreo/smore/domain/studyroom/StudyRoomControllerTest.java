@@ -2,7 +2,7 @@ package org.oreo.smore.domain.studyroom;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.oreo.smore.domain.studyroom.dto.StudyRoomDto;
+import org.oreo.smore.domain.studyroom.dto.StudyRoomInfoReadResponse;
 import org.oreo.smore.global.common.CursorPage;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -35,7 +35,7 @@ class StudyRoomControllerTest {
     @DisplayName("GET /v1/study-rooms 조회 시 빈 페이지 반환")
     void listStudyRooms_ShouldReturnEmptyPage() throws Exception {
         // given: Service가 빈 페이지를 반환하도록 Mock 설정
-        CursorPage<StudyRoomDto> emptyPage = new CursorPage<>();
+        CursorPage<StudyRoomInfoReadResponse> emptyPage = new CursorPage<>();
         emptyPage.setCursorId(1L);
         emptyPage.setSize(20);
         emptyPage.setContent(Collections.emptyList());
@@ -66,12 +66,12 @@ class StudyRoomControllerTest {
     @DisplayName("GET /v1/study-rooms 조회 시 기본 정렬(latest) 검증")
     void listStudyRooms_WithSortParam() throws Exception {
         // given: 하나의 더미 DTO 반환
-        StudyRoomDto dto = StudyRoomDto.builder()
+        StudyRoomInfoReadResponse dto = StudyRoomInfoReadResponse.builder()
                 .roomId(100L)
                 .title("테스트 스터디룸")
                 .build();
 
-        CursorPage<StudyRoomDto> page = new CursorPage<>();
+        CursorPage<StudyRoomInfoReadResponse> page = new CursorPage<>();
         page.setCursorId(100L);
         page.setSize(1);
         page.setContent(Collections.singletonList(dto));
@@ -99,11 +99,11 @@ class StudyRoomControllerTest {
     @DisplayName("GET /v1/study-rooms 여러 파라미터로 조회 시 서비스 호출 및 응답 검증")
     void listStudyRooms_WithAllParams() throws Exception {
         // given
-        StudyRoomDto dto = StudyRoomDto.builder()
+        StudyRoomInfoReadResponse dto = StudyRoomInfoReadResponse.builder()
                 .roomId(200L)
                 .title("여러 파람 테스트")
                 .build();
-        CursorPage<StudyRoomDto> page = new CursorPage<>();
+        CursorPage<StudyRoomInfoReadResponse> page = new CursorPage<>();
         page.setCursorId(200L);
         page.setSize(1);
         page.setContent(Collections.singletonList(dto));

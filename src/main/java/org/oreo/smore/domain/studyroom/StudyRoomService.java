@@ -5,7 +5,7 @@ import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Root;
 import lombok.RequiredArgsConstructor;
 import org.oreo.smore.domain.participant.ParticipantRepository;
-import org.oreo.smore.domain.studyroom.dto.StudyRoomDto;
+import org.oreo.smore.domain.studyroom.dto.StudyRoomInfoReadResponse;
 import org.oreo.smore.global.common.CursorPage;
 import org.oreo.smore.domain.user.User;
 import org.oreo.smore.domain.user.UserRepository;
@@ -25,7 +25,7 @@ public class StudyRoomService {
     private final ParticipantRepository participantRepository;
     private final UserRepository userRepo;
 
-    public CursorPage<StudyRoomDto> listStudyRooms(
+    public CursorPage<StudyRoomInfoReadResponse> listStudyRooms(
             Long page,
             int limit,
             String search,
@@ -38,7 +38,7 @@ public class StudyRoomService {
         Pageable pageable = PageRequest.of(0, limit + 1, sortOrder);
 
         List<StudyRoom> rooms = fetchRooms(cursor, search, category, pageable);
-        List<StudyRoomDto> dtos = mapAndFilterRooms(rooms, hideFullRooms);
+        List<StudyRoomInfoReadResponse> dtos = mapAndFilterRooms(rooms, hideFullRooms);
         if (isPopularSort(sort)) {
             applyPopularSort(dtos);
         }
@@ -101,7 +101,7 @@ public class StudyRoomService {
         }
     }
 
-    private List<StudyRoomDto> mapAndFilterRooms(
+    private List<StudyRoomInfoReadResponse> mapAndFilterRooms(
             List<StudyRoom> rooms,
             boolean hideFullRooms
     ) {
@@ -111,19 +111,19 @@ public class StudyRoomService {
                 .collect(Collectors.toList());
     }
 
-    private StudyRoomDto toDto(StudyRoom room) {
+    private StudyRoomInfoReadResponse toDto(StudyRoom room) {
         long count = participantRepository.countByRoomIdAndLeftAtIsNull(room.getRoomId());
         User creator = userRepo.findById(room.getUserId())
                 .orElseThrow(() -> new ResponseStatusException(
                         HttpStatus.NOT_FOUND,
                         "Creator not found: " + room.getUserId()
                 ));
-        return StudyRoomDto.of(room, count, creator.getNickname());
+        return StudyRoomInfoReadResponse.of(room, count, creator.getNickname());
     }
 
-    private void applyPopularSort(List<StudyRoomDto> dtos) {
+    private void applyPopularSort(List<StudyRoomInfoReadResponse> dtos) {
         dtos.sort(
-                Comparator.comparingLong(StudyRoomDto::getCurrentParticipants).reversed()
+                Comparator.comparingLong(StudyRoomInfoReadResponse::getCurrentParticipants).reversed()
         );
     }
 }

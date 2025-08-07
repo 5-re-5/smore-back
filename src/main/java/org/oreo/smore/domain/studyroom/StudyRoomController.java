@@ -5,7 +5,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.oreo.smore.domain.studyroom.dto.CreateStudyRoomRequest;
 import org.oreo.smore.domain.studyroom.dto.CreateStudyRoomResponse;
-import org.oreo.smore.domain.studyroom.dto.StudyRoomDto;
+import org.oreo.smore.domain.studyroom.dto.StudyRoomInfoReadResponse;
 import org.oreo.smore.global.common.CursorPage;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -47,7 +47,7 @@ public class StudyRoomController {
     }
 
     @GetMapping
-    public ResponseEntity<CursorPage<StudyRoomDto>> listStudyRooms(
+    public ResponseEntity<CursorPage<StudyRoomInfoReadResponse>> listStudyRooms(
             @RequestParam(name="page", defaultValue="1") Long page,
             @RequestParam(name="limit", defaultValue="20") int limit,
             @RequestParam(name="search", required=false) String search,
@@ -55,7 +55,7 @@ public class StudyRoomController {
             @RequestParam(name="sort", defaultValue="latest") String sort,
             @RequestParam(name="hide-full-rooms", defaultValue="false") boolean hideFullRooms
     ) {
-        CursorPage<StudyRoomDto> studyRoomDtoCursorPage = studyRoomService.listStudyRooms(page, limit, search, category, sort, hideFullRooms);
+        CursorPage<StudyRoomInfoReadResponse> studyRoomDtoCursorPage = studyRoomService.listStudyRooms(page, limit, search, category, sort, hideFullRooms);
         return ResponseEntity.ok(studyRoomDtoCursorPage);
     }
 }

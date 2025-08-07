@@ -1,10 +1,9 @@
-// src/main/java/org/oreo/smore/domain/studyroom/dto/StudyRoomDto.java
 package org.oreo.smore.domain.studyroom.dto;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
+import lombok.ToString;
 import org.oreo.smore.global.common.CursorPage.Identifiable;
 import org.oreo.smore.domain.studyroom.StudyRoom;
 
@@ -17,7 +16,8 @@ import java.util.List;
 @Getter
 @AllArgsConstructor
 @Builder
-public class StudyRoomDto implements Identifiable {
+@ToString
+public class StudyRoomInfoReadResponse implements Identifiable {
     private Long roomId;
 
     private String title;
@@ -36,6 +36,10 @@ public class StudyRoomDto implements Identifiable {
 
     private String createdAt;
 
+    private Boolean isPomodoro;
+
+    private Boolean isPrivate;
+
     private CreatorDto creator;
 
     @Override
@@ -52,7 +56,7 @@ public class StudyRoomDto implements Identifiable {
     /**
      * 엔티티 + 집계값 → DTO
      */
-    public static StudyRoomDto of(
+    public static StudyRoomInfoReadResponse of(
             StudyRoom e,
             long       currentParticipants,
             String     creatorNickname
@@ -64,7 +68,7 @@ public class StudyRoomDto implements Identifiable {
                 .atOffset(ZoneOffset.UTC)
                 .format(DateTimeFormatter.ISO_INSTANT);
 
-        return new StudyRoomDto(
+        return new StudyRoomInfoReadResponse(
                 e.getRoomId(),
                 e.getTitle(),
                 e.getThumbnailUrl(),
@@ -74,6 +78,8 @@ public class StudyRoomDto implements Identifiable {
                 currentParticipants,
                 e.getPassword(),
                 created,
+                e.getFocusTime() == null,
+                !(e.getPassword() == null || e.getPassword().isEmpty()),
                 new CreatorDto(creatorNickname)
         );
     }
