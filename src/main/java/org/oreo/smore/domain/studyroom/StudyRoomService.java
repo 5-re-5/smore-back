@@ -4,7 +4,10 @@ import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Root;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.oreo.smore.domain.participant.Participant;
 import org.oreo.smore.domain.participant.ParticipantRepository;
+import org.oreo.smore.domain.participant.ParticipantService;
 import org.oreo.smore.domain.studyroom.dto.StudyRoomDto;
 import org.oreo.smore.global.common.CursorPage;
 import org.oreo.smore.domain.user.User;
@@ -12,18 +15,26 @@ import org.oreo.smore.domain.user.UserRepository;
 import org.springframework.data.domain.*;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.*;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class StudyRoomService {
     private final StudyRoomRepository roomRepository;
     private final ParticipantRepository participantRepository;
     private final UserRepository userRepo;
+    private final ParticipantService  participantService;
 
     public CursorPage<StudyRoomDto> listStudyRooms(
             Long page,
@@ -126,4 +137,56 @@ public class StudyRoomService {
                 Comparator.comparingLong(StudyRoomDto::getCurrentParticipants).reversed()
         );
     }
+
+    // 방 삭제
+    @Transactional
+    public void deleteStudyRoom(Long roomId, Long ownerId) {
+        log.warn("방 삭제 처리 시작 - 방ID: {}, 방장ID: {}", roomId, ownerId);
+
+        // 방장 권한 확인
+        validateRoomOwner(roomId, ownerId);
+
+        // 현재 참가자 수 확인
+        List<Participant> activeParticipants = participantService.getActiveParticipants(roomId);
+        long participantCount = activeParticipants.size();
+
+        log.info("방 삭제 전 상태 - 방ID: {}, 활성 참가자 수: {}명", roomId, participantCount);
+
+        if (participantCount > 1) {
+            log.warn("⚠️ 다른 참가자가 있는 상태에서 방 삭제 - 방ID: {}, 영향받는 참가자: {}명",
+                    roomId, participantCount - 1);
+        }
+
+        // 참가 이력 먼저 삭제
+        participantService.deleteAllParticipantsByRoom(roomId);
+        log.info("✅ 참가 이력 삭제 완료 - 방ID: {}", roomId);
+
+        // 방 삭제
+        roomRepository.deleteById(roomId);
+        log.info("✅ 스터디룸 삭제 완료 - 방ID: {}", roomId);
+
+        // LiveKit 방 삭제
+
+        log.warn("✅ 방 삭제 완료 - 방ID: {}, 방장ID: {}, 삭제된 참가자 수: {}명",
+                roomId, ownerId, participantCount);
+
+    }
+
+    private void validateRoomOwner(Long roomId, Long ownerId) {
+
+        StudyRoom studyRoom = roomRepository.findById(roomId)
+                .orElseThrow(() -> {
+                    log.error("존재하지 않는 방 - 방ID: {}", roomId);
+                    return new IllegalArgumentException("방을 찾을 수 없습니다: " + roomId);
+                });
+
+        if (!studyRoom.getUserId().equals(ownerId)) {
+            log.error("방장 권한 없음 - 방ID: {}, 요청자: {}, 실제방장: {}",
+                    roomId, ownerId, studyRoom.getUserId());
+            throw new IllegalArgumentException("방장만 방을 삭제할 수 있습니다");
+        }
+
+        log.debug("✅ 방장 권한 확인 완료 - 방ID: {}, 방장ID: {}", roomId, ownerId);
+    }
+
 }

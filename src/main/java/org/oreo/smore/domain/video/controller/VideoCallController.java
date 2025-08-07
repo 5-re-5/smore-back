@@ -207,8 +207,6 @@ public class VideoCallController {
                     roomId, ownerId, e.getMessage(), e);
             return ResponseEntity.badRequest().build();
         }
-
-        return null;
     }
 
 

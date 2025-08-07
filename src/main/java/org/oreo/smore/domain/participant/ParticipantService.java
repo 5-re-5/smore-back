@@ -108,7 +108,7 @@ public class ParticipantService {
     
     }
 
-    private List<Participant> getActiveParticipants(Long roomId) {
+    public List<Participant> getActiveParticipants(Long roomId) {
         log.debug("현재 활성 참가자 조회 - 방ID: {}", roomId);
         List<Participant> activeParticipants = participantRepository.findActiveParticipantsByRoomId(roomId);
         log.debug("활성 참가자 수: {} - 방ID: {}", activeParticipants.size(), roomId);
