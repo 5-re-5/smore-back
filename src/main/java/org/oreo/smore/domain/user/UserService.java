@@ -1,11 +1,15 @@
 package org.oreo.smore.domain.user;
 
 import lombok.RequiredArgsConstructor;
+import org.oreo.smore.domain.studytime.StudyTimeRepository;
 import org.oreo.smore.domain.user.dto.request.UserUpdateRequest;
-import org.oreo.smore.domain.user.dto.request.UserUpdateResponse;
+import org.oreo.smore.domain.user.dto.response.UserInfoResponse;
+import org.oreo.smore.domain.user.dto.response.UserUpdateResponse;
 import org.oreo.smore.global.common.CloudStorageManager;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -15,6 +19,7 @@ import java.time.format.DateTimeParseException;
 @RequiredArgsConstructor
 public class UserService {
     private final UserRepository repository;
+    private final StudyTimeRepository studyTimeRepository;
     private final CloudStorageManager cloudStorageManager;
 
     @Transactional
@@ -48,6 +53,9 @@ public class UserService {
 
         // 닉네임 변경
         if (req.getNickname() != null && !req.getNickname().isBlank()) {
+            if (repository.existsByNickname(req.getNickname())) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "이미 사용 중인 닉네임입니다.");
+            }
             user.setNickname(req.getNickname());
         }
 
@@ -88,6 +96,11 @@ public class UserService {
             user.setGoalStudyTime(req.getGoalStudyTime());
         }
 
+        // 각오
+        if (req.getDetermination() != null) {
+            user.setDetermination(req.getDetermination());
+        }
+
         User saved = repository.save(user);
 
         return UserUpdateResponse.builder()
@@ -107,5 +120,36 @@ public class UserService {
                 .build();
     }
 
+
+    @Transactional(readOnly = true)
+    public UserInfoResponse getUserInfo(Long userId) {
+        User user = repository.findById(userId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "해당 유저를 찾을 수 없습니다."));
+
+        // 오늘 공부 시간 계산
+        int todayStudyMinutes = studyTimeRepository.findTopByUserIdOrderByCreatedAtDesc(userId)
+                .filter(study -> study.getCreatedAt().toLocalDate().isEqual(LocalDate.now()))
+                .map(study -> (int) java.time.Duration.between(
+                        study.getCreatedAt(), study.getDeletedAt()
+                ).toMinutes())
+                .orElse(0);
+
+        return UserInfoResponse.builder()
+                .data(UserInfoResponse.DataResponse.builder()
+                        .userId(user.getUserId())
+                        .name(user.getName())
+                        .email(user.getEmail())
+                        .nickname(user.getNickname())
+                        .profileUrl(user.getProfileUrl())
+                        .createdAt(user.getCreatedAt().toLocalDate().toString())
+                        .goalStudyTime(user.getGoalStudyTime())
+                        .level(user.getLevel())
+                        .targetDateTitle(user.getTargetDateTitle())
+                        .targetDate(user.getTargetDate() != null ? user.getTargetDate().toLocalDate().toString() : null)
+                        .determination(user.getDetermination())
+                        .todayStudyMinute(todayStudyMinutes)
+                        .build())
+                .build();
+    }
 
 }
