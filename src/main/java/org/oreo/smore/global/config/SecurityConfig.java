@@ -6,6 +6,7 @@ import org.oreo.smore.domain.auth.oauth.CustomOAuth2UserService;
 import org.oreo.smore.domain.auth.oauth.OAuth2SuccessHandler;
 import org.oreo.smore.domain.auth.token.TokenService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpStatus;
@@ -23,6 +24,9 @@ public class SecurityConfig {
     private final JwtTokenProvider tokenProvider;
     private final TokenService tokenService;
     private final CustomOAuth2UserService oAuth2UserService;
+
+    @Value("${app.oauth2.frontend.success-redirect-url}")
+    private String successRedirectUrl;
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -47,7 +51,7 @@ public class SecurityConfig {
                                 .baseUri("/login/oauth2/code/*")
                         )
                         .userInfoEndpoint(u -> u.userService(oAuth2UserService))
-                        .successHandler(new OAuth2SuccessHandler(tokenProvider, tokenService))
+                        .successHandler(new OAuth2SuccessHandler(tokenProvider, tokenService, successRedirectUrl))
                 )
                 .addFilterBefore(
                         new JwtAuthenticationFilter(tokenProvider),
