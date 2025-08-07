@@ -2,6 +2,7 @@ package org.oreo.smore.domain.user;
 
 import lombok.RequiredArgsConstructor;
 import org.oreo.smore.domain.user.dto.request.UserUpdateRequest;
+import org.oreo.smore.domain.user.dto.response.UserInfoResponse;
 import org.oreo.smore.domain.user.dto.response.UserUpdateResponse;
 import org.oreo.smore.global.common.CloudStorageManager;
 import org.springframework.http.HttpStatus;
@@ -118,4 +119,7 @@ public class UserService {
     }
 
 
+    public UserInfoResponse getUserInfo(Long userId) {
+        return null;
+    }
 }

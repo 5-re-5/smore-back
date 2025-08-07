@@ -3,6 +3,7 @@ package org.oreo.smore.domain.user;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.oreo.smore.domain.user.dto.request.UserUpdateRequest;
+import org.oreo.smore.domain.user.dto.response.UserInfoResponse;
 import org.oreo.smore.domain.user.dto.response.UserUpdateResponse;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -46,4 +47,17 @@ public class UserController {
 
         return ResponseEntity.ok(userService.updateUser(userId, userUpdateRequest));
     }
+
+    @GetMapping("/v1/users/{userId}")
+    public ResponseEntity<UserInfoResponse> getUserInfo(
+            @PathVariable Long userId,
+            Authentication authentication) {
+
+        if (Long.parseLong(authentication.getPrincipal().toString()) != userId) {
+            return new ResponseEntity<>(HttpStatus.UNAUTHORIZED); // userId가 다르면 401
+        }
+
+        return ResponseEntity.ok(userService.getUserInfo(userId));
+    }
+
 }
