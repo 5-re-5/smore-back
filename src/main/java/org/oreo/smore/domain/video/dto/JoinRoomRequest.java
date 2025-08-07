@@ -11,9 +11,6 @@ import lombok.NoArgsConstructor;
 public class JoinRoomRequest {
     // 스터디룸 입장 요청 DTO
 
-    @NotBlank(message = "사용자 식별자는 필수입니다.")
-    private String identity;
-
     private String password;
 
     private Integer tokenExpirySeconds;
@@ -22,9 +19,8 @@ public class JoinRoomRequest {
 
     private Boolean canSubscribe;
 
-    public JoinRoomRequest(String identity, String password, Integer tokenExpirySeconds,
+    public JoinRoomRequest(String password, Integer tokenExpirySeconds,
                            Boolean canPublish, Boolean canSubscribe) {
-        this.identity = identity;
         this.password = password;
         this.tokenExpirySeconds = tokenExpirySeconds != null ? tokenExpirySeconds : 3600;
         this.canPublish = canPublish != null ? canPublish : true;
