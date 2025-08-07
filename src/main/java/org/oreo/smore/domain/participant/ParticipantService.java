@@ -47,6 +47,34 @@ public class ParticipantService {
         return savedParticipant;
     }
 
+    // 참가자 퇴장 처리
+    @Transactional
+    public void leaveRoom(Long roomId, Long userId) {
+        log.info("참가자 퇴장 시작 - 방ID: {}, 사용자ID: {} ", roomId, userId);
+
+        Participant participant = findActiveParticipant(roomId, userId);
+        participant.leave();
+
+        long remainingCount = participantRepository.countActiveParticipantsByRoomId(roomId);
+        log.info("✅ 참가자 퇴장 완료 - 방ID: {}, 사용자ID: {}, 남은 참가자 수: {}",
+                roomId, userId, remainingCount);
+    }
+
+    // 활성화된 참가자 조회
+    private Participant findActiveParticipant(Long roomId, Long userId) {
+        List<Participant> activeParticipants = participantRepository.findActiveParticipantsByRoomId(roomId);
+
+        return activeParticipants.stream()
+                .filter(p -> p.getUserId().equals(userId))
+                .findFirst()
+                .orElseThrow(() -> {
+                    log.error("활성 참가자를 찾을 수 없음 - 방ID: {}, 사용자ID: {}", roomId, userId);
+                    return new ParticipantException.ParticipantNotFoundException(
+                            String.format("방 %d에서 사용자 %d를 찾을 수 없습니다", roomId, userId));
+                });
+    }
+
+
     // 방 최대 인원 검증
     private void validateRoomCapacity(StudyRoom studyRoom) {
         long currentCount = participantRepository.countActiveParticipantsByRoomId(studyRoom.getRoomId());
@@ -97,4 +125,51 @@ public class ParticipantService {
                             String.format("방 %d를 찾을 수 없습니다", roomId));
                 });
     }
+
+    // 참가자 음소거 설정
+    @Transactional
+    public void muteParticipant(Long roomId, Long userId) {
+        log.info("참가자 음소거 설정 - 방ID: {}, 사용자ID: {}", roomId, userId);
+
+        Participant participant = findActiveParticipant(roomId, userId);
+        participant.mute();
+
+        log.info("✅ 참가자 음소거 설정 완료 - 방ID: {}, 사용자ID: {}", roomId, userId);
+    }
+
+    // 참가자 음소거 해제
+    @Transactional
+    public void unmuteParticipant(Long roomId, Long userId) {
+        log.info("참가자 음소거 해제 - 방ID: {}, 사용자ID: {}", roomId, userId);
+
+        Participant participant = findActiveParticipant(roomId, userId);
+        participant.unmute();
+
+        log.info("✅ 참가자 음소거 해제 완료 - 방ID: {}, 사용자ID: {}", roomId, userId);
+    }
+
+    // 참가자 강퇴
+    @Transactional
+    public void banParticipant(Long roomId, Long userId) {
+        log.warn("참가자 강퇴 시작 - 방ID: {}, 사용자ID: {}", roomId, userId);
+
+        Participant participant = findActiveParticipant(roomId, userId);
+        participant.ban();
+
+        long remainingCount = participantRepository.countActiveParticipantsByRoomId(roomId);
+        log.warn("⚠️ 참가자 강퇴 완료 - 방ID: {}, 사용자ID: {}, 남은 참가자 수: {}",
+                roomId, userId, remainingCount);
+    }
+
+    // 방장 나가면 방 삭제
+    @Transactional
+    public void deleteAllParticipantsByRoom(Long roomId) {
+        log.warn("방 삭제로 인한 참가 이력 삭제 - 방ID: {}", roomId);
+
+        long participantCount = participantRepository.countActiveParticipantsByRoomId(roomId);
+        participantRepository.deleteByRoomId(roomId);
+
+        log.warn("⚠️ 참가 이력 삭제 완료 - 방ID: {}, 삭제된 참가자 수: {}", roomId, participantCount);
+    }
+
 }

@@ -6,12 +6,16 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface ParticipantRepository extends JpaRepository<Participant, Long> {
 
     // 특정 방의 모든 참가자 조회 (입장 시간 순)
     List<Participant> findByRoomIdOrderByJoinedAtAsc(Long roomId);
+
+    @Query("SELECT p FROM Participant p WHERE p.roomId = :roomId AND p.userId = :userId AND p.leftAt IS NULL AND p.isBanned = false")
+    Optional<Participant> findActiveParticipant(@Param("roomId") Long roomId, @Param("userId") Long userId);
 
     // 특정 방의 현재 참가자 조회
     @Query("SELECT p FROM Participant p WHERE p.roomId = :roomId AND p.leftAt IS NULL AND p.isBanned = false")
