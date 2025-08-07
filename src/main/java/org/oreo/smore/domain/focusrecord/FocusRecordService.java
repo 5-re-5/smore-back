@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.time.Instant;
+import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
@@ -37,9 +38,9 @@ public class FocusRecordService {
         List<FocusRecord> records = loadLastMonthRecords(userId);
         HourlyStats stats = calculateHourlyStats(records, clientOffset);
 
-        FocusTrackDto trackDto  = buildFocusTrack(stats);
-        FocusTimeDto  bestWindow = findWindow(stats, true);
-        FocusTimeDto  worstWindow = findWindow(stats, false);
+        FocusTrackDto trackDto = buildFocusTrack(stats);
+        FocusTimeDto bestWindow = findWindow(stats, true);
+        FocusTimeDto worstWindow = findWindow(stats, false);
         int averageDurationMinutes = calculateAverageFocusDuration(records);
 
         String feedback = generateFeedback(bestWindow, worstWindow, averageDurationMinutes, trackDto);
@@ -52,7 +53,10 @@ public class FocusRecordService {
     }
 
     private List<FocusRecord> loadLastMonthRecords(Long userId) {
-        Instant oneMonthAgo = Instant.now().minus(1, ChronoUnit.MONTHS);
+        Instant oneMonthAgo = LocalDateTime.now()
+                .minusMonths(1)
+                .toInstant(ZoneOffset.UTC);
+
         List<FocusRecord> records =
                 focusRecordRepository.findByUserIdAndTimestampAfter(userId, oneMonthAgo);
 
@@ -71,7 +75,7 @@ public class FocusRecordService {
                 ));
 
         Map<Integer, Double> hourlyAverages = new HashMap<>();
-        Map<Integer, Long> recordCounts   = new HashMap<>();
+        Map<Integer, Long> recordCounts = new HashMap<>();
 
         for (int hour = 0; hour < 24; hour++) {
             List<FocusRecord> bucket = groupedByHour.getOrDefault(hour, Collections.emptyList());
@@ -88,7 +92,7 @@ public class FocusRecordService {
     private FocusTrackDto buildFocusTrack(HourlyStats stats) {
         List<Integer> roundedScores = HOUR_LABELS.stream()
                 .map(label -> Integer.parseInt(label))
-                .map(hour  -> (int) Math.round(stats.hourlyAverages().get(hour)))
+                .map(hour -> (int) Math.round(stats.hourlyAverages().get(hour)))
                 .collect(Collectors.toUnmodifiableList());
 
         return new FocusTrackDto(HOUR_LABELS, roundedScores);
@@ -98,7 +102,7 @@ public class FocusRecordService {
         double bestValue = findMax
                 ? Double.NEGATIVE_INFINITY
                 : Double.POSITIVE_INFINITY;
-        int    bestStart = 0;
+        int bestStart = 0;
 
         for (int startHour = 0; startHour <= 24 - WINDOW_HOURS; startHour++) {
             OptionalDouble windowAvgOpt = calculateWindowAverage(stats, startHour);
@@ -117,7 +121,7 @@ public class FocusRecordService {
         }
 
         String from = String.format("%02d:00", bestStart);
-        String to   = String.format("%02d:00", bestStart + WINDOW_HOURS);
+        String to = String.format("%02d:00", bestStart + WINDOW_HOURS);
         return new FocusTimeDto(from, to, (int) Math.round(bestValue));
     }
 
@@ -171,6 +175,7 @@ public class FocusRecordService {
 
     private record HourlyStats(
             Map<Integer, Double> hourlyAverages,
-            Map<Integer, Long>   recordCounts
-    ) {}
+            Map<Integer, Long> recordCounts
+    ) {
+    }
 }
