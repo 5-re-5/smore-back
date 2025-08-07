@@ -116,6 +116,12 @@ public class ParticipantService {
 
     }
 
+    public long getActiveParticipantCount(Long roomId) {
+        long count = participantRepository.countActiveParticipantsByRoomId(roomId);
+        log.debug("현재 참가자 수 - 방ID: {}, 참가자 수: {}명", roomId, count);
+        return count;
+    }
+
     // 스터디룸 존재 여부 검증
     private StudyRoom validateStudyRoomExists(Long roomId) {
         return studyRoomRepository.findById(roomId)

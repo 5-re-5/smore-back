@@ -165,7 +165,7 @@ public class StudyRoomService {
         roomRepository.deleteById(roomId);
         log.info("✅ 스터디룸 삭제 완료 - 방ID: {}", roomId);
 
-        // LiveKit 방 삭제
+        // TODO: LiveKit 방 삭제
 
         log.warn("✅ 방 삭제 완료 - 방ID: {}, 방장ID: {}, 삭제된 참가자 수: {}명",
                 roomId, ownerId, participantCount);
@@ -189,4 +189,40 @@ public class StudyRoomService {
         log.debug("✅ 방장 권한 확인 완료 - 방ID: {}, 방장ID: {}", roomId, ownerId);
     }
 
+    // 방장 퇴장으로 인한 방 삭제
+    @Transactional
+    public void deleteStudyRoomByOwnerLeave(Long roomId, Long ownerId) {
+        log.warn("방장 퇴장으로 인한 방 삭제 처리 - 방ID: {}, 방장ID: {}", roomId, ownerId);
+
+        try {
+            // 현재 참가자 상황 확인
+            long participantCount = participantService.getActiveParticipantCount(roomId);
+            log.info("방 삭제 전 참가자 수 - 방ID: {}, 참가자: {}명", roomId, participantCount);
+
+            if (participantCount > 1) {
+                log.warn("⚠️ 다른 참가자 {}명이 강제 퇴장됨 - 방ID: {}", participantCount - 1, roomId);
+
+                // TODO: WebSocket으로 다른 참가자들에게 방 삭제 알림
+            }
+
+            // 모든 참가 이력 삭제
+            participantService.deleteAllParticipantsByRoom(roomId);
+            log.info("✅ 참가 이력 삭제 완료 - 방ID: {}", roomId);
+
+            // 스터디룸 삭제
+            roomRepository.deleteById(roomId);
+            log.info("✅ 스터디룸 삭제 완료 - 방ID: {}", roomId);
+
+            // TODO: LiveKit 방 삭제
+            // liveKitService.deleteRoom(roomId);
+
+            log.warn("방장 퇴장으로 방 완전 삭제 완료 - 방ID: {}, 방장ID: {}, 총 영향받은 참가자: {}명",
+                    roomId, ownerId, participantCount);
+
+        } catch (Exception e) {
+            log.error("❌ 방장 퇴장으로 인한 방 삭제 실패 - 방ID: {}, 방장ID: {}, 오류: {}",
+                    roomId, ownerId, e.getMessage(), e);
+            throw new RuntimeException("방 삭제에 실패했습니다: " + e.getMessage(), e);
+        }
+    }
 }
