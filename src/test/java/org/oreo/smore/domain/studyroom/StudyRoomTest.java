@@ -30,7 +30,7 @@ class StudyRoomTest {
         String generatedRoomId = studyRoom.generateLiveKitRoomId();
 
         // then
-        assertEquals("room_456", generatedRoomId);
+        assertEquals("study-room-456", generatedRoomId);
     }
 
     @Test

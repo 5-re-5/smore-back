@@ -8,6 +8,7 @@ import org.oreo.smore.domain.participant.ParticipantService;
 import org.oreo.smore.domain.participant.exception.ParticipantException;
 import org.oreo.smore.domain.studyroom.StudyRoom;
 import org.oreo.smore.domain.studyroom.StudyRoomRepository;
+import org.oreo.smore.domain.studyroom.StudyRoomService;
 import org.oreo.smore.domain.video.dto.JoinRoomRequest;
 import org.oreo.smore.domain.video.dto.TokenRequest;
 import org.oreo.smore.domain.video.dto.TokenResponse;
@@ -30,6 +31,7 @@ public class VideoCallController {
     private final StudyRoomRepository studyRoomRepository;
     private final UserIdentityService userIdentityService;
     private final ParticipantService participantService;
+    private final StudyRoomService studyRoomService;
 
     // 스터디룸 입장 토큰 발급
     @PostMapping("/{roomId}/join")
@@ -195,9 +197,17 @@ public class VideoCallController {
 
         log.warn("방 삭제 요청 - 방ID: {}, 방장ID: {}", roomId, ownerId);
 
-//        try {
-//
-//        }
+        try {
+            studyRoomService.deleteStudyRoom(roomId, ownerId);
+
+            log.warn("방 삭제 완료 - 방ID: {}, 방장ID: {}", roomId, ownerId);
+            return ResponseEntity.ok().build();
+        } catch (Exception e) {
+            log.error("❌ 방 삭제 실패 - 방ID: {}, 방장ID: {}, 오류: {}",
+                    roomId, ownerId, e.getMessage(), e);
+            return ResponseEntity.badRequest().build();
+        }
+
         return null;
     }
 
