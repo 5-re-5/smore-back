@@ -98,7 +98,7 @@ public class ParticipantService {
     }
 
     // 사용자가 특정 방에 참가중인지 확인
-    private boolean isUserInRoom(Long roomId, Long userId) {
+    public boolean isUserInRoom(Long roomId, Long userId) {
         List<Participant> activeParticipants = getActiveParticipants(roomId);
         boolean isInRoom = activeParticipants.stream()
                 .anyMatch(p -> p.getUserId().equals(userId));
