@@ -56,6 +56,14 @@ public class Participant {
         log.debug("새 참가자 객체 생성 - 방 ID: {}, 사용자ID: {}", roomId, userId);
     }
 
+    @PrePersist
+    protected void onCreate() {
+        if (joinedAt == null) {
+            joinedAt = LocalDateTime.now();
+            log.debug("@PrePersist - joinedAt 설정: {}", joinedAt);
+        }
+    }
+
     // 오디오 활성화
     public void enableAudio(String controllerType) {
         this.audioEnabled = true;
