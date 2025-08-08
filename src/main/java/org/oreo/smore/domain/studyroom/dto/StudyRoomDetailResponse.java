@@ -6,18 +6,24 @@ import lombok.Getter;
 @Getter
 @Builder
 public class StudyRoomDetailResponse {
-    private Long roomId;
-    private String title;
-    private String description;
-    private String thumbnailUrl;
-    private String tag;
-    private String category;
-    private Integer focusTime;
-    private Integer breakTime;
-    private Integer maxParticipants;
-    private Integer currentParticipants;
-    private String createdAt;
-    private CreatorDto creator;
+    private Data data;
+
+    @Getter
+    @Builder
+    public static class Data {
+        private Long roomId;
+        private String title;
+        private String description;
+        private String thumbnailUrl;
+        private String tag;
+        private String category;
+        private Integer focusTime;
+        private Integer breakTime;
+        private Integer maxParticipants;
+        private Integer currentParticipants;
+        private String createdAt;
+        private CreatorDto creator;
+    }
 
     @Getter
     @Builder

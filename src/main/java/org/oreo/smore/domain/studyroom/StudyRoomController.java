@@ -3,10 +3,7 @@ package org.oreo.smore.domain.studyroom;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.oreo.smore.domain.studyroom.dto.CreateStudyRoomRequest;
-import org.oreo.smore.domain.studyroom.dto.CreateStudyRoomResponse;
-import org.oreo.smore.domain.studyroom.dto.StudyRoomDetailResponse;
-import org.oreo.smore.domain.studyroom.dto.StudyRoomInfoReadResponse;
+import org.oreo.smore.domain.studyroom.dto.*;
 import org.oreo.smore.global.common.CursorPage;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -63,5 +60,13 @@ public class StudyRoomController {
     @GetMapping("/{roomId}")
     public ResponseEntity<StudyRoomDetailResponse> getStudyRoomDetail(@PathVariable Long roomId) {
         return ResponseEntity.ok(studyRoomService.getStudyRoomDetail(roomId));
+    }
+
+    @GetMapping("/{userId}/recent-study")
+    public ResponseEntity<RecentStudyRoomsResponse> getRecentStudyRooms(@PathVariable Long userId, Authentication authentication) {
+        if (Long.parseLong(authentication.getPrincipal().toString()) != userId) {
+            return new ResponseEntity<>(HttpStatus.FORBIDDEN); // userId가 다르면 403
+        }
+        return ResponseEntity.ok(studyRoomService.getRecentStudyRooms(userId));
     }
 }
