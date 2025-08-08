@@ -24,10 +24,14 @@ public class ApiResponseAdvice implements ResponseBodyAdvice<Object> {
 
         // 특정 경로는 제외 (필요에 따라 수정)
         String path = request.getURI().getPath();
-        if (body instanceof String ||
-                path.contains("/actuator") ||
+        if (path.contains("/actuator") ||
                 path.contains("/h2-console") ||
                 path.contains("/error")) {
+            return body;
+        }
+
+        if (selectedContentType != null &&
+                !selectedContentType.includes(MediaType.APPLICATION_JSON)) {
             return body;
         }
 
