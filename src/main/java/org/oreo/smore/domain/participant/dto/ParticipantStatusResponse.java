@@ -5,11 +5,13 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.util.List;
+
 @Getter
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class RoomInfo {
-    private Boolean isAllMuted;
-    private Integer totalParticipants;
+public class ParticipantStatusResponse {
+    private List<ParticipantInfo> participants;
+    private RoomInfo roomInfo;
 }
