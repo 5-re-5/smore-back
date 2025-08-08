@@ -8,13 +8,7 @@ import java.util.List;
 @Getter
 @Builder
 public class RecentStudyRoomsResponse {
-    private Data data;
-
-    @Getter
-    @Builder
-    public static class Data {
-        private List<RoomDto> rooms;
-    }
+    private List<RoomDto> rooms;
 
     @Getter
     @Builder
