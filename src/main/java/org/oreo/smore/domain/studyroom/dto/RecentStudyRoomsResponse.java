@@ -19,6 +19,7 @@ public class RecentStudyRoomsResponse {
         private String category;
         private Integer maxParticipants;
         private Integer currentParticipants;
+        private Boolean password;
         private String tag;
         private String thumbnailUrl;
         private Boolean isDeleted;
