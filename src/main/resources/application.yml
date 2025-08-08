@@ -30,6 +30,11 @@ spring:
             redirect-uri: ${OAUTH2_REDIRECT_URI:${baseUrl}/login/oauth2/code/{registrationId}}
             client-name: Google
 
+gms:
+  api:
+    endpoint: ${GMS_API_ENDPOINT}
+    key: ${GMS_API_KEY}
+
 app:
   oauth2:
     frontend:
