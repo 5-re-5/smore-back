@@ -4,7 +4,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.oreo.smore.domain.participant.ParticipantRepository;
-import org.oreo.smore.domain.studyroom.dto.StudyRoomDto;
+import org.oreo.smore.domain.studyroom.dto.StudyRoomInfoReadResponse;
 import org.oreo.smore.domain.user.User;
 import org.oreo.smore.domain.user.UserRepository;
 import org.oreo.smore.global.common.CursorPage;
@@ -53,7 +53,7 @@ class StudyRoomServiceTest {
                 .willReturn(new SliceImpl<>(Collections.emptyList(), pageable, false));
 
         // when
-        CursorPage<StudyRoomDto> result =
+        CursorPage<StudyRoomInfoReadResponse> result =
                 studyRoomService.listStudyRooms(null, limit, null, null, null, false);
 
         // then
@@ -92,12 +92,18 @@ class StudyRoomServiceTest {
         given(userRepository.findById(42L)).willReturn(Optional.of(creator));
 
         // when
-        CursorPage<StudyRoomDto> result =
+        CursorPage<StudyRoomInfoReadResponse> result =
                 studyRoomService.listStudyRooms(null, limit, "검색어", "EMPLOYMENT", "latest", true);
 
+
+        System.out.println("result:");
+        for (StudyRoomInfoReadResponse e : result.getContent()) {
+            System.out.println(e);
+        }
+        System.out.println("------");
         // then: DTO 필드들도 category 기반 로직에 맞춰 검증 가능
         assertEquals(1, result.getContent().size());
-        StudyRoomDto dto = result.getContent().get(0);
+        StudyRoomInfoReadResponse dto = result.getContent().get(0);
         assertEquals(100L, dto.getRoomId());
         assertEquals("tester", dto.getCreator().getNickname());
         assertEquals(3, dto.getCurrentParticipants());
