@@ -187,7 +187,7 @@ public class VideoCallController {
                 // 일반 참가자 퇴장
                 participantService.leaveRoom(roomId, userId);
 
-                // 남은 참가자 수 확인 (테스트에서 기대하는 동작)
+                // 남은 참가자 수 확인
                 long remainingCount = participantService.getActiveParticipantCount(roomId);
                 log.info("✅ 개별 참가자 퇴장 완료 - 방ID: {}, 사용자ID: {}, 남은 참가자: {}명",
                         roomId, userId, remainingCount);
@@ -254,7 +254,7 @@ public class VideoCallController {
             Authentication authentication) {
 
         try {
-            // 인증 확인 (선택적 - 방 참가자만 조회 가능하게 할지 결정 필요)
+            // 인증 확인
             String principal = authentication != null ? authentication.getPrincipal().toString() : null;
             log.info("참가자 상태 조회 요청 - 방ID: {}, 요청자: {}", roomId, principal);
 
@@ -265,6 +265,10 @@ public class VideoCallController {
                     roomId, response.getParticipants().size(), response.getRoomInfo().getIsAllMuted());
 
             return ResponseEntity.ok(response);
+
+        } catch (IllegalStateException e) {  // ✅ IllegalStateException을 먼저 처리
+            log.error("❌ 참가자 상태 조회 중 시스템 오류 - 방ID: {}, 오류: {}", roomId, e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
 
         } catch (RuntimeException e) {
             log.error("❌ 참가자 상태 조회 실패 - 방ID: {}, 오류: {}", roomId, e.getMessage());
