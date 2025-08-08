@@ -241,21 +241,24 @@ public class StudyRoomService {
 
         // 4. 응답 DTO 생성
         return StudyRoomDetailResponse.builder()
-                .roomId(room.getRoomId())
-                .title(room.getTitle())
-                .description(room.getDescription())
-                .thumbnailUrl(room.getThumbnailUrl())
-                .tag(room.getTag())
-                .category(room.getCategory().name())
-                .focusTime(room.getFocusTime())
-                .breakTime(room.getBreakTime())
-                .maxParticipants(room.getMaxParticipants())
-                .currentParticipants(currentParticipants)
-                .createdAt(room.getCreatedAt().toString())
-                .creator(StudyRoomDetailResponse.CreatorDto.builder()
-                        .userId(creator.getUserId())
-                        .nickname(creator.getNickname())
+                .data(StudyRoomDetailResponse.Data.builder()
+                        .roomId(room.getRoomId())
+                        .title(room.getTitle())
+                        .description(room.getDescription())
+                        .thumbnailUrl(room.getThumbnailUrl())
+                        .tag(room.getTag())
+                        .category(room.getCategory().name())
+                        .focusTime(room.getFocusTime())
+                        .breakTime(room.getBreakTime())
+                        .maxParticipants(room.getMaxParticipants())
+                        .currentParticipants(currentParticipants)
+                        .createdAt(room.getCreatedAt().toString())
+                        .creator(StudyRoomDetailResponse.CreatorDto.builder()
+                                .userId(creator.getUserId())
+                                .nickname(creator.getNickname())
+                                .build())
                         .build())
                 .build();
+
     }
 }
