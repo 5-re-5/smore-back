@@ -2,15 +2,24 @@ package org.oreo.smore.domain.participant;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.oreo.smore.domain.participant.dto.ParticipantInfo;
+import org.oreo.smore.domain.participant.dto.ParticipantStatusResponse;
+import org.oreo.smore.domain.participant.dto.RoomInfo;
 import org.oreo.smore.domain.participant.exception.ParticipantException;
 import org.oreo.smore.domain.studyroom.StudyRoom;
 import org.oreo.smore.domain.studyroom.StudyRoomRepository;
+import org.oreo.smore.domain.studytime.StudyTime;
 import org.oreo.smore.domain.studytime.StudyTimeRepository;
+import org.oreo.smore.domain.user.User;
 import org.oreo.smore.domain.user.UserRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Duration;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -207,6 +216,113 @@ public class ParticipantService {
 
 
     // 통합 상태 조회 메서드
+    public ParticipantStatusResponse getParticipantStatus(Long roomId, Long userId) {
+        log.info("참가자 상태 조회 시작 - 방ID: {}", roomId);
 
+        // 방 존재 여부 확인
+        StudyRoom studyRoom = validateStudyRoomExists(roomId);
 
+        // 활성화된 참가자 목록 조회
+        List<Participant> activeParticipants = getActiveParticipants(roomId);
+
+        if (activeParticipants.isEmpty()) {
+            log.warn("활성 참가자가 없는 방 - 방ID: {}", roomId);
+            return ParticipantStatusResponse.builder()
+                    .participants(List.of())
+                    .roomInfo(RoomInfo.builder()
+                            .isAllMuted(studyRoom.isAllMuted())
+                            .totalParticipants(0)
+                            .build())
+                    .build();
+        }
+
+        // 참가자 정보 변환
+        List<ParticipantInfo> participantInfos = activeParticipants.stream()
+                .map(participant -> convertToParticipantInfo(participant, studyRoom))
+                .collect(Collectors.toList());
+
+        // 방 정보 구성
+        RoomInfo roomInfo = RoomInfo.builder()
+                .isAllMuted(studyRoom.isAllMuted())
+                .totalParticipants(activeParticipants.size())
+                .build();
+
+        log.info("✅ 참가자 상태 조회 완료 - 방ID: {}, 참가자 수: {}명, 전체음소거: {}",
+                roomId, activeParticipants.size(), studyRoom.isAllMuted());
+
+        return ParticipantStatusResponse.builder()
+                .participants(participantInfos)
+                .roomInfo(roomInfo)
+                .build();
+    }
+
+    private ParticipantInfo convertToParticipantInfo(Participant participant, StudyRoom studyRoom) {
+
+        // 사용자 정보 조회
+        User user = userRepository.findById(participant.getUserId())
+                .orElseThrow(() -> {
+                    log.error("사용자를 찾을 수 없음 - 사용자ID: {}", participant.getUserId());
+                    return new RuntimeException("사용자를 찾을 수 없습니다: " + participant.getUserId());
+                });
+
+        // 방장 여부 확인
+        boolean isOwner = studyRoom.getUserId().equals(participant.getUserId());
+
+        // 실제 공부 시간 정보 조회
+        int todayStudyTime = getTodayStudyTime(participant.getUserId());
+        int targetStudyTime = user.getGoalStudyTime();
+
+        return ParticipantInfo.builder()
+                .userId(participant.getUserId())
+                .nickname(user.getNickname())
+                .isOwner(isOwner)
+                .audioEnabled(participant.isAudioEnabled())
+                .videoEnabled(participant.isVideoEnabled())
+                .todayStudyTime(todayStudyTime)
+                .targetStudyTime(targetStudyTime)
+                .build();
+    }
+
+    // 오늘 공부 시간 조회 로직
+    private int getTodayStudyTime(Long userId) {
+        try {
+            // 오늘 공부 시간 계산
+            LocalDate today = LocalDate.now();
+            LocalDateTime startOfDay = today.atStartOfDay();
+            LocalDateTime endOfDay = today.atTime(23, 59, 59);
+
+            List<StudyTime> allRecords = studyTimeRepository.findAllByUserIdAndCreatedAtBetween(
+                    userId,
+                    startOfDay.minusDays(1),  // 하루 전까지도 시작할 수 있으므로
+                    endOfDay.plusDays(1)      // 자정 넘어가는 케이스도 포함
+            );
+
+            int todayStudyMinutes = 0;
+
+            for (StudyTime record : allRecords) {
+                LocalDateTime start = record.getCreatedAt();
+                LocalDateTime end = record.getDeletedAt();
+
+                if (end == null) {
+                    // 아직 진행 중인 공부 세션은 현재 시간까지로 계산
+                    end = LocalDateTime.now();
+                }
+
+                // 오늘 날짜 범위와 겹치는 구간만 계산
+                LocalDateTime effectiveStart = start.isBefore(startOfDay) ? startOfDay : start;
+                LocalDateTime effectiveEnd = end.isAfter(endOfDay) ? endOfDay : end;
+
+                if (!effectiveStart.isAfter(effectiveEnd)) {
+                    todayStudyMinutes += Duration.between(effectiveStart, effectiveEnd).toMinutes();
+                }
+            }
+
+            log.debug("오늘 공부시간 조회 완료 - 사용자ID: {}, 시간: {}분", userId, todayStudyMinutes);
+            return todayStudyMinutes;
+
+        } catch (Exception e) {
+            log.error("오늘 공부시간 조회 실패 - 사용자ID: {}, 오류: {}", userId, e.getMessage());
+            return 0; // 오류 시 0분 반환
+        }
+    }
 }
