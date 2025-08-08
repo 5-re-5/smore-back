@@ -1,8 +1,6 @@
 package org.oreo.smore.domain.video.service;
 
-import io.livekit.server.AccessToken;
-import io.livekit.server.RoomJoin;
-import io.livekit.server.RoomName;
+import io.livekit.server.*;
 import lombok.extern.slf4j.Slf4j;
 import org.oreo.smore.domain.video.dto.TokenRequest;
 import org.oreo.smore.domain.video.dto.TokenResponse;
@@ -40,7 +38,9 @@ public class LiveKitTokenService {
             token.addGrants(
                     new RoomJoin(true),
                     // 방 지정
-                    new RoomName(request.getRoomName())
+                    new RoomName(request.getRoomName()),
+                    new RoomCreate(true),
+                    new RoomAdmin(true)
             );
 
             // JWT 생성
