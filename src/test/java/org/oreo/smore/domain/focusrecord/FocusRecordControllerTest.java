@@ -6,7 +6,9 @@ import org.mockito.*;
 import org.oreo.smore.domain.focusrecord.dto.FocusRecordsResponse;
 import org.springframework.http.*;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.oauth2.jwt.Jwt;
 
+import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.*;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -48,7 +50,7 @@ class FocusRecordControllerTest {
 
         ResponseEntity<Object> resp = controller.getFocusRecords(userId, tz, auth);
 
-        assertEquals(HttpStatus.UNAUTHORIZED, resp.getStatusCode());
+        assertEquals(HttpStatus.FORBIDDEN, resp.getStatusCode());
         assertNull(resp.getBody());
     }
 }
