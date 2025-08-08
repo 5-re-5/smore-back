@@ -288,6 +288,8 @@ public class StudyRoomService {
 
                     int currentParticipants = (int) participantRepository.countActiveParticipantsByRoomId(roomId);
 
+                    boolean hasPassword = room.getPassword() != null && !room.getPassword().isBlank();
+
                     return RecentStudyRoomsResponse.RoomDto.builder()
                             .roomId(room.getRoomId())
                             .title(room.getTitle())
@@ -295,6 +297,7 @@ public class StudyRoomService {
                             .category(room.getCategory().name())
                             .maxParticipants(room.getMaxParticipants())
                             .currentParticipants(currentParticipants)
+                            .password(hasPassword)
                             .tag(room.getTag())
                             .thumbnailUrl(room.getThumbnailUrl())
                             .isDeleted(room.getDeletedAt() != null)
