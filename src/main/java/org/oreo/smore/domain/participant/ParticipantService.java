@@ -27,7 +27,12 @@ public class ParticipantService {
         StudyRoom studyRoom = validateStudyRoomExists(roomId);
 
         // 이미 참가중인지 확인
-        validateNotAlreadyInRoom(roomId, userId);
+        Participant existingParticipant = checkExistingParticipant(roomId, userId);
+        if (existingParticipant != null) {
+            log.info("✅ 기존 참가자 정보 반환 - 방ID: {}, 사용자ID: {}, 참가자ID: {}",
+                    roomId, userId, existingParticipant.getParticipantId());
+            return existingParticipant;
+        }
 
         // 방 최대 인원 확인
         validateRoomCapacity(studyRoom);
@@ -86,6 +91,24 @@ public class ParticipantService {
                     String.format("방이 가득함 (%d/%d)", currentCount, studyRoom.getMaxParticipants()));
         }
 
+    }
+
+    private Participant checkExistingParticipant(Long roomId, Long userId) {
+        List<Participant> activeParticipants = getActiveParticipants(roomId);
+
+        Participant existing = activeParticipants.stream()
+                .filter(p -> p.getUserId().equals(userId))
+                .findFirst()
+                .orElse(null);
+
+        if (existing != null) {
+            log.info("기존 활성 참가자 발견 - 방ID: {}, 사용자ID: {}, 참가자ID: {}",
+                    roomId, userId, existing.getParticipantId());
+        } else {
+            log.debug("신규 참가자 - 방ID: {}, 사용자ID: {}", roomId, userId);
+        }
+
+        return existing;
     }
 
     // 이미 참가중인지 검증
