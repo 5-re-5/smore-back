@@ -1,6 +1,7 @@
 package org.oreo.smore.domain.video.dto;
 
 import jakarta.validation.constraints.NotBlank;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -8,6 +9,7 @@ import lombok.NoArgsConstructor;
 @Getter
 @Builder
 @NoArgsConstructor
+@AllArgsConstructor
 public class JoinRoomRequest {
     // 스터디룸 입장 요청 DTO
 
@@ -19,13 +21,6 @@ public class JoinRoomRequest {
 
     private Boolean canSubscribe;
 
-    public JoinRoomRequest(String password, Integer tokenExpirySeconds,
-                           Boolean canPublish, Boolean canSubscribe) {
-        this.password = password;
-        this.tokenExpirySeconds = tokenExpirySeconds != null ? tokenExpirySeconds : 3600;
-        this.canPublish = canPublish != null ? canPublish : true;
-        this.canSubscribe = canSubscribe != null ? canSubscribe : true;
-    }
 
     public Integer getTokenExpirySeconds() {
         return tokenExpirySeconds != null ? tokenExpirySeconds : 3600;
