@@ -5,6 +5,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.oreo.smore.domain.participant.exception.ParticipantException;
 import org.oreo.smore.domain.studyroom.StudyRoom;
 import org.oreo.smore.domain.studyroom.StudyRoomRepository;
+import org.oreo.smore.domain.studytime.StudyTimeRepository;
+import org.oreo.smore.domain.user.UserRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -17,6 +19,8 @@ public class ParticipantService {
 
     private final ParticipantRepository participantRepository;
     private final StudyRoomRepository studyRoomRepository;
+    private final UserRepository userRepository;
+    private final StudyTimeRepository studyTimeRepository;
 
     // 참가자 등록
     @Transactional
@@ -200,5 +204,9 @@ public class ParticipantService {
 
         log.warn("⚠️ 참가 이력 삭제 완료 - 방ID: {}, 삭제된 참가자 수: {}", roomId, participantCount);
     }
+
+
+    // 통합 상태 조회 메서드
+
 
 }
