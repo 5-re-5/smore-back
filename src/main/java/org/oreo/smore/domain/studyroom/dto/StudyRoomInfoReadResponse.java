@@ -32,8 +32,6 @@ public class StudyRoomInfoReadResponse implements Identifiable {
 
     private Long currentParticipants;
 
-    private String password;
-
     private String createdAt;
 
     private Boolean isPomodoro;
@@ -76,7 +74,6 @@ public class StudyRoomInfoReadResponse implements Identifiable {
                 e.getCategory().name(),         // enum → String
                 e.getMaxParticipants(),
                 currentParticipants,
-                e.getPassword(),
                 created,
                 e.getFocusTime() == null,
                 !(e.getPassword() == null || e.getPassword().isEmpty()),
