@@ -241,6 +241,9 @@ public class StudyRoomService {
         // 3. 현재 참가자 수 계산 (퇴장 안 했고 강퇴도 안 당한 사용자)
         int currentParticipants = (int) participantRepository.countActiveParticipantsByRoomId(roomId);
 
+        // 4. 비밀번호 존재 여부 판단
+        boolean hasPassword = room.getPassword() != null && !room.getPassword().isBlank();
+
         // 4. 응답 DTO 생성
         return StudyRoomDetailResponse.builder()
                 .roomId(room.getRoomId())
@@ -253,6 +256,7 @@ public class StudyRoomService {
                 .breakTime(room.getBreakTime())
                 .maxParticipants(room.getMaxParticipants())
                 .currentParticipants(currentParticipants)
+                .password(hasPassword)
                 .createdAt(room.getCreatedAt().toString())
                 .creator(StudyRoomDetailResponse.CreatorDto.builder()
                         .userId(creator.getUserId())
