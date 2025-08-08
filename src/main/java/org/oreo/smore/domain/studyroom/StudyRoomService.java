@@ -300,9 +300,7 @@ public class StudyRoomService {
                 .toList();
 
         return RecentStudyRoomsResponse.builder()
-                .data(RecentStudyRoomsResponse.Data.builder()
-                        .rooms(rooms)
-                        .build())
+                .rooms(rooms)
                 .build();
     }
 
