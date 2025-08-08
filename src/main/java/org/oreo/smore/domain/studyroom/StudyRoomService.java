@@ -7,6 +7,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.oreo.smore.domain.participant.Participant;
 import org.oreo.smore.domain.participant.ParticipantRepository;
+import org.oreo.smore.domain.studyroom.dto.RecentStudyRoomsResponse;
 import org.oreo.smore.domain.studyroom.dto.StudyRoomDetailResponse;
 import org.oreo.smore.domain.studyroom.dto.StudyRoomInfoReadResponse;
 import org.oreo.smore.domain.participant.ParticipantService;
@@ -260,5 +261,9 @@ public class StudyRoomService {
                         .build())
                 .build();
 
+    }
+
+    public RecentStudyRoomsResponse getRecentStudyRooms(Long userId) {
+        return null;
     }
 }
