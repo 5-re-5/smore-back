@@ -7,6 +7,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.oreo.smore.domain.participant.Participant;
 import org.oreo.smore.domain.participant.ParticipantRepository;
+import org.oreo.smore.domain.studyroom.dto.StudyRoomDetailResponse;
 import org.oreo.smore.domain.studyroom.dto.StudyRoomInfoReadResponse;
 import org.oreo.smore.domain.participant.ParticipantService;
 import org.oreo.smore.global.common.CursorPage;
@@ -224,5 +225,37 @@ public class StudyRoomService {
                     roomId, ownerId, e.getMessage(), e);
             throw new RuntimeException("방 삭제에 실패했습니다: " + e.getMessage(), e);
         }
+    }
+
+    public StudyRoomDetailResponse getStudyRoomDetail(Long roomId) {
+        // 1. 스터디룸 조회
+        StudyRoom room = roomRepository.findById(roomId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "스터디룸이 존재하지 않습니다."));
+
+        // 2. 생성자 정보 조회
+        User creator = userRepo.findById(room.getUserId())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "스터디룸 생성자가 존재하지 않습니다."));
+
+        // 3. 현재 참가자 수 계산 (퇴장 안 했고 강퇴도 안 당한 사용자)
+        int currentParticipants = (int) participantRepository.countActiveParticipantsByRoomId(roomId);
+
+        // 4. 응답 DTO 생성
+        return StudyRoomDetailResponse.builder()
+                .roomId(room.getRoomId())
+                .title(room.getTitle())
+                .description(room.getDescription())
+                .thumbnailUrl(room.getThumbnailUrl())
+                .tag(room.getTag())
+                .category(room.getCategory().name())
+                .focusTime(room.getFocusTime())
+                .breakTime(room.getBreakTime())
+                .maxParticipants(room.getMaxParticipants())
+                .currentParticipants(currentParticipants)
+                .createdAt(room.getCreatedAt().toString())
+                .creator(StudyRoomDetailResponse.CreatorDto.builder()
+                        .userId(creator.getUserId())
+                        .nickname(creator.getNickname())
+                        .build())
+                .build();
     }
 }

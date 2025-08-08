@@ -48,7 +48,7 @@ public class VideoCallController {
             }
         } catch (Exception e) {
             log.error("Authentication validation failed: {}", e.getMessage());
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
 
         // User 테이블에서 nickname 가져오기
@@ -113,7 +113,7 @@ public class VideoCallController {
             }
         } catch (Exception e) {
             log.error("Authentication validation failed in rejoin: {}", e.getMessage());
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
 
         String userNickname = userIdentityService.generateIdentityForUser(userId);
@@ -157,7 +157,7 @@ public class VideoCallController {
             }
         } catch (Exception e) {
             log.error("인증 검증 실패: {}", e.getMessage());
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
 
         log.info("개별 참가자 퇴장 요청 - 방ID: {}, 사용자ID: {}", roomId, userId);
@@ -225,7 +225,7 @@ public class VideoCallController {
             }
         } catch (Exception e) {
             log.error("인증 검증 실패: {}", e.getMessage());
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
 
         log.warn("방 삭제 요청 - 방ID: {}, 방장ID: {}", roomId, ownerId);
