@@ -50,6 +50,20 @@ public class StudyRoomValidator {
         return studyRoom;
     }
 
+    public StudyRoom validateRejoinAccess(Long roomId, Long userId) {
+        String userNickname = userIdentityService.generateIdentityForUser(userId);
+
+        log.info("재입장 검증 시작 - 방ID: {}, 닉네임: [{}], 사용자ID: {}", roomId, userNickname, userId);
+
+        // 방 존재 여부 + 삭제 유무 확인
+        StudyRoom studyRoom = validateRoomExists(roomId);
+
+        log.info("✅ 재입장 검증 완료 - 방: [{}], 닉네임: [{}], 방장여부: [{}] (비밀번호 검증 생략)",
+                studyRoom.getTitle(), userNickname, isRoomOwner(studyRoom, userId));
+
+        return studyRoom;
+    }
+
     // 방장 권한 검증
     public StudyRoom validateOwnerPermission(Long roomId, Long userId) {
         log.info("방장 권한 검증 - 방ID: {}, 사용자ID: {}", roomId, userId);

@@ -129,8 +129,11 @@ public class VideoCallController {
             return ResponseEntity.badRequest().build();
         }
 
-        StudyRoom studyRoom = studyRoomValidator.validateRoomAccess(roomId, request, userId);
+        StudyRoom studyRoom = studyRoomValidator.validateRejoinAccess(roomId, userId);
 
+        // 방 정보 로깅
+        studyRoomValidator.logRoomInfo(studyRoom);
+        
         String liveKitRoomName = studyRoom.hasLiveKitRoom()
                 ? studyRoom.getLiveKitRoomId()
                 : studyRoom.generateLiveKitRoomId();
