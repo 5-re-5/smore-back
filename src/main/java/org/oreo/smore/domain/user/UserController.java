@@ -27,7 +27,7 @@ public class UserController {
             BindingResult bindingResult) throws Exception {
 
         if (Long.parseLong(authentication.getPrincipal().toString()) != userId) {
-            return new ResponseEntity<>(HttpStatus.UNAUTHORIZED); // userId가 다르면 401
+            return new ResponseEntity<>(HttpStatus.FORBIDDEN); // userId가 다르면 403
         }
 
         if (bindingResult.hasErrors()) {
@@ -54,7 +54,7 @@ public class UserController {
             Authentication authentication) {
 
         if (Long.parseLong(authentication.getPrincipal().toString()) != userId) {
-            return new ResponseEntity<>(HttpStatus.UNAUTHORIZED); // userId가 다르면 401
+            return new ResponseEntity<>(HttpStatus.FORBIDDEN); // userId가 다르면 403
         }
 
         return ResponseEntity.ok(userService.getUserInfo(userId));

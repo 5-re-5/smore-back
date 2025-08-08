@@ -20,7 +20,7 @@ public class StudyTimeController {
     @PostMapping("/v1/study-times/{userId}")
     public ResponseEntity<String> startStudyTime(@PathVariable Long userId, Authentication authentication) {
         if (Long.parseLong(authentication.getPrincipal().toString()) != userId) {
-            return new ResponseEntity<>(HttpStatus.UNAUTHORIZED); // userId가 다르면 401
+            return new ResponseEntity<>(HttpStatus.FORBIDDEN); // userId가 다르면 403
         }
         studyTimeService.startStudyTime(userId);
         return ResponseEntity.status(201).body("created");
@@ -29,7 +29,7 @@ public class StudyTimeController {
     @PatchMapping("/v1/study-times/{userId}")
     public ResponseEntity<String> updateStudyTime(@PathVariable Long userId, Authentication authentication) {
         if (Long.parseLong(authentication.getPrincipal().toString()) != userId) {
-            return new ResponseEntity<>(HttpStatus.UNAUTHORIZED); // userId가 다르면 401
+            return new ResponseEntity<>(HttpStatus.FORBIDDEN); // userId가 다르면 403
         }
         studyTimeService.updateStudyTime(userId);
         return ResponseEntity.ok("OK");
@@ -41,7 +41,7 @@ public class StudyTimeController {
             Authentication authentication
     ) {
         if (Long.parseLong(authentication.getPrincipal().toString()) != userId) {
-            return new ResponseEntity<>(HttpStatus.UNAUTHORIZED); // userId가 다르면 401
+            return new ResponseEntity<>(HttpStatus.FORBIDDEN); // userId가 다르면 403
         }
 
         return ResponseEntity.ok(studyTimeService.getStatistics(userId));
