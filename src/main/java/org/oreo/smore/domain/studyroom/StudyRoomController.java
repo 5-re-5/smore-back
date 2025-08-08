@@ -5,6 +5,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.oreo.smore.domain.studyroom.dto.CreateStudyRoomRequest;
 import org.oreo.smore.domain.studyroom.dto.CreateStudyRoomResponse;
+import org.oreo.smore.domain.studyroom.dto.StudyRoomDetailResponse;
 import org.oreo.smore.domain.studyroom.dto.StudyRoomInfoReadResponse;
 import org.oreo.smore.global.common.CursorPage;
 import org.springframework.http.HttpStatus;
@@ -57,5 +58,10 @@ public class StudyRoomController {
     ) {
         CursorPage<StudyRoomInfoReadResponse> studyRoomDtoCursorPage = studyRoomService.listStudyRooms(page, limit, search, category, sort, hideFullRooms);
         return ResponseEntity.ok(studyRoomDtoCursorPage);
+    }
+
+    @GetMapping("/{roomId}")
+    public ResponseEntity<StudyRoomDetailResponse> getStudyRoomDetail(@PathVariable Long roomId) {
+        return ResponseEntity.ok(studyRoomService.getStudyRoomDetail(roomId));
     }
 }
