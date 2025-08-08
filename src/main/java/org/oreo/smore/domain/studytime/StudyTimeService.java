@@ -103,13 +103,11 @@ public class StudyTimeService {
                 .toList();
 
         return StudyTimeStatisticsResponse.builder()
-                .data(StudyTimeStatisticsResponse.DataResponse.builder()
-                        .userId(userId)
-                        .totalAttendance(attendanceStreak)
-                        .weekdayGraph(Arrays.stream(weekdayGraph).boxed().toList())
-                        .weeklyGraph(weeklyGraph)
-                        .studyTrack(new StudyTimeStatisticsResponse.StudyTrack(points))
-                        .build())
+                .userId(userId)
+                .totalAttendance(attendanceStreak)
+                .weekdayGraph(Arrays.stream(weekdayGraph).boxed().toList())
+                .weeklyGraph(weeklyGraph)
+                .studyTrack(new StudyTimeStatisticsResponse.StudyTrack(points))
                 .build();
     }
 }

@@ -10,20 +10,11 @@ import java.util.List;
 @AllArgsConstructor
 @Builder
 public class StudyTimeStatisticsResponse {
-    private DataResponse data;
-
-    @Getter
-    @Setter
-    @NoArgsConstructor
-    @AllArgsConstructor
-    @Builder
-    public static class DataResponse {
-        private Long userId;
-        private Integer totalAttendance;
-        private List<Integer> weekdayGraph;
-        private List<Integer> weeklyGraph;
-        private StudyTrack studyTrack;
-    }
+    private Long userId;
+    private Integer totalAttendance;
+    private List<Integer> weekdayGraph;
+    private List<Integer> weeklyGraph;
+    private StudyTrack studyTrack;
 
     @Getter
     @Setter

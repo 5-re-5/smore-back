@@ -10,14 +10,7 @@ import java.util.List;
 @AllArgsConstructor
 @NoArgsConstructor
 public class FocusRecordsResponse {
-    private DataWrapper data;
-
-    @Data
-    @AllArgsConstructor
-    @NoArgsConstructor
-    public static class DataWrapper {
-        private AiInsightsDto aiInsights;
-    }
+    private AiInsightsDto aiInsights;
 
     @Data
     @AllArgsConstructor
