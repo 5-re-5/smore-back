@@ -64,6 +64,9 @@ public class UserService {
             if (repository.existsByNickname(req.getNickname())) {
                 throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "이미 사용 중인 닉네임입니다.");
             }
+            if (req.getNickname().toUpperCase().startsWith("OREO")) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "OREO로 시작하는 닉네임은 사용할 수 없습니다.");
+            }
             user.setNickname(req.getNickname());
         }
 
