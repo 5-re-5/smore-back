@@ -7,6 +7,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.oreo.smore.domain.participant.Participant;
 import org.oreo.smore.domain.participant.ParticipantRepository;
+import org.oreo.smore.domain.studyroom.dto.StudyRoomDetailResponse;
 import org.oreo.smore.domain.studyroom.dto.StudyRoomInfoReadResponse;
 import org.oreo.smore.domain.participant.ParticipantService;
 import org.oreo.smore.global.common.CursorPage;
@@ -224,5 +225,9 @@ public class StudyRoomService {
                     roomId, ownerId, e.getMessage(), e);
             throw new RuntimeException("방 삭제에 실패했습니다: " + e.getMessage(), e);
         }
+    }
+
+    public StudyRoomDetailResponse getStudyRoomDetail(Long roomId) {
+        return null;
     }
 }
