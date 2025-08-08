@@ -264,6 +264,46 @@ public class StudyRoomService {
     }
 
     public RecentStudyRoomsResponse getRecentStudyRooms(Long userId) {
-        return null;
+        // 1. 유저의 참여 기록 중 최신 참여 기준으로 정렬
+        List<Participant> recentParticipants = participantRepository
+                .findByUserIdOrderByJoinedAtDesc(userId);
+
+        // 2. 중복 없는 roomId 3개 추출 (최신순 유지)
+        LinkedHashSet<Long> distinctRoomIds = new LinkedHashSet<>();
+        for (Participant p : recentParticipants) {
+            distinctRoomIds.add(p.getRoomId());
+            if (distinctRoomIds.size() == 3) break;
+        }
+
+        List<RecentStudyRoomsResponse.RoomDto> rooms = distinctRoomIds.stream()
+                .map(roomId -> {
+                    StudyRoom room = roomRepository.findById(roomId)
+                            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "스터디룸이 존재하지 않습니다."));
+
+                    User owner = userRepo.findById(room.getUserId())
+                            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "방장이 존재하지 않습니다."));
+
+                    int currentParticipants = (int) participantRepository.countActiveParticipantsByRoomId(roomId);
+
+                    return RecentStudyRoomsResponse.RoomDto.builder()
+                            .roomId(room.getRoomId())
+                            .title(room.getTitle())
+                            .owner(owner.getNickname())
+                            .category(room.getCategory().name())
+                            .maxParticipants(room.getMaxParticipants())
+                            .currentParticipants(currentParticipants)
+                            .tag(room.getTag())
+                            .thumbnailUrl(room.getThumbnailUrl())
+                            .isDeleted(room.getDeletedAt() != null)
+                            .build();
+                })
+                .toList();
+
+        return RecentStudyRoomsResponse.builder()
+                .data(RecentStudyRoomsResponse.Data.builder()
+                        .rooms(rooms)
+                        .build())
+                .build();
     }
+
 }
