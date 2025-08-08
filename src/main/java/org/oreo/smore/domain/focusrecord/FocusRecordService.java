@@ -2,7 +2,6 @@ package org.oreo.smore.domain.focusrecord;
 
 import org.oreo.smore.domain.focusrecord.dto.FocusRecordsResponse;
 import org.oreo.smore.domain.focusrecord.dto.FocusRecordsResponse.AiInsightsDto;
-import org.oreo.smore.domain.focusrecord.dto.FocusRecordsResponse.DataWrapper;
 import org.oreo.smore.domain.focusrecord.dto.FocusRecordsResponse.FocusTimeDto;
 import org.oreo.smore.domain.focusrecord.dto.FocusRecordsResponse.FocusTrackDto;
 import lombok.RequiredArgsConstructor;
@@ -13,7 +12,6 @@ import org.springframework.web.server.ResponseStatusException;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
-import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -28,7 +26,7 @@ public class FocusRecordService {
 
     private static final List<String> HOUR_LABELS = IntStream.range(0, 24)
             .mapToObj(hour -> String.format("%02d", hour))
-            .collect(Collectors.toUnmodifiableList());
+            .toList();
 
     private final FocusRecordRepository focusRecordRepository;
     private final FocusFeedbackService focusFeedbackService;
@@ -50,8 +48,7 @@ public class FocusRecordService {
         AiInsightsDto insights = new AiInsightsDto(
                 feedback, bestWindow, worstWindow, averageDurationMinutes, trackDto
         );
-        DataWrapper dataWrapper = new DataWrapper(insights);
-        return new FocusRecordsResponse(dataWrapper);
+        return new FocusRecordsResponse(insights);
     }
 
     private List<FocusRecord> loadLastMonthRecords(Long userId) {
@@ -93,9 +90,9 @@ public class FocusRecordService {
 
     private FocusTrackDto buildFocusTrack(HourlyStats stats) {
         List<Integer> roundedScores = HOUR_LABELS.stream()
-                .map(label -> Integer.parseInt(label))
+                .map(Integer::parseInt)
                 .map(hour -> (int) Math.round(stats.hourlyAverages().get(hour)))
-                .collect(Collectors.toUnmodifiableList());
+                .toList();
 
         return new FocusTrackDto(HOUR_LABELS, roundedScores);
     }

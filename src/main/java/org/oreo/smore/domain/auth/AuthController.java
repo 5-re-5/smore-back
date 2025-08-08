@@ -25,7 +25,7 @@ public class AuthController {
     private final TokenService tokenService;
 
     @PostMapping("/refresh")
-    public ResponseEntity<DataResponse<UserIdDto>> refresh(
+    public ResponseEntity<UserIdDto> refresh(
             @CookieValue(name = "refreshToken", required = false) String refreshToken,
             HttpServletResponse response
     ) {
@@ -49,7 +49,7 @@ public class AuthController {
 
         // JSON 바디로도 동일 정보 반환
         return ResponseEntity.ok(
-                new DataResponse<>( new UserIdDto(userId) )
+                new UserIdDto(userId)
         );
     }
 
@@ -89,12 +89,6 @@ public class AuthController {
     @AllArgsConstructor
     static class UserIdDto {
         private long userId;
-    }
-
-    @Getter
-    @AllArgsConstructor
-    static class DataResponse<T> {
-        private T data;
     }
 
     private String extractTokenFromCookies(HttpServletRequest request) {

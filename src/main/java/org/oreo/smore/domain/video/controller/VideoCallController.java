@@ -5,6 +5,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.oreo.smore.domain.participant.Participant;
 import org.oreo.smore.domain.participant.ParticipantService;
+import org.oreo.smore.domain.participant.dto.ParticipantStatusResponse;
 import org.oreo.smore.domain.participant.exception.ParticipantException;
 import org.oreo.smore.domain.studyroom.StudyRoom;
 import org.oreo.smore.domain.studyroom.StudyRoomRepository;
@@ -242,6 +243,36 @@ public class VideoCallController {
         }
     }
 
+
+    // 참가자 상태 조회
+    @GetMapping("/{roomId}/participants/status")
+    public ResponseEntity<ParticipantStatusResponse> getParticipantStatus(
+            @PathVariable Long roomId,
+            Authentication authentication) {
+
+        try {
+            // 인증 확인 (선택적 - 방 참가자만 조회 가능하게 할지 결정 필요)
+            String principal = authentication != null ? authentication.getPrincipal().toString() : null;
+            log.info("참가자 상태 조회 요청 - 방ID: {}, 요청자: {}", roomId, principal);
+
+            // 참가자 상태 정보 조회
+            ParticipantStatusResponse response = participantService.getParticipantStatus(roomId);
+
+            log.info("✅ 참가자 상태 조회 성공 - 방ID: {}, 참가자 수: {}명, 전체음소거: {}",
+                    roomId, response.getParticipants().size(), response.getRoomInfo().getIsAllMuted());
+
+            return ResponseEntity.ok(response);
+
+        } catch (RuntimeException e) {
+            log.error("❌ 참가자 상태 조회 실패 - 방ID: {}, 오류: {}", roomId, e.getMessage());
+            return ResponseEntity.badRequest().build();
+
+        } catch (Exception e) {
+            log.error("❌ 참가자 상태 조회 중 시스템 오류 - 방ID: {}, 오류: {}",
+                    roomId, e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
 
     private String ensureLiveKitRoom(StudyRoom studyRoom) {
         // DB에 아직 LiveKit roomId 가 없으면 생성 후 저장

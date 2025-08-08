@@ -11,34 +11,25 @@ import lombok.NoArgsConstructor;
 @Builder
 public class UserUpdateResponse {
 
-    private DataResponse data;
+    private Long userId;
 
-    @Data
-    @NoArgsConstructor
-    @AllArgsConstructor
-    @Builder
-    public static class DataResponse {
+    private String name;
 
-        private Long userId;
+    private String email;
 
-        private String name;
+    private String nickname;
 
-        private String email;
+    private String profileUrl;
 
-        private String nickname;
+    private String createdAt; // YYYY-MM-DD
 
-        private String profileUrl;
+    private Integer goalStudyTime;
 
-        private String createdAt; // YYYY-MM-DD
+    private String level;
 
-        private Integer goalStudyTime;
+    private String targetDateTitle;
 
-        private String level;
+    private String targetDate; // YYYY-MM-DD
 
-        private String targetDateTitle;
-
-        private String targetDate; // YYYY-MM-DD
-
-        private String determination;
-    }
+    private String determination;
 }
