@@ -115,19 +115,17 @@ public class UserService {
         User saved = repository.save(user);
 
         return UserUpdateResponse.builder()
-                .data(UserUpdateResponse.DataResponse.builder()
-                        .userId(saved.getUserId())
-                        .name(saved.getName())
-                        .email(saved.getEmail())
-                        .nickname(saved.getNickname())
-                        .profileUrl(saved.getProfileUrl())
-                        .createdAt(saved.getCreatedAt().toLocalDate().toString())
-                        .goalStudyTime(saved.getGoalStudyTime())
-                        .level(saved.getLevel())
-                        .targetDateTitle(saved.getTargetDateTitle())
-                        .targetDate(saved.getTargetDate() != null ? saved.getTargetDate().toLocalDate().toString() : null)
-                        .determination(saved.getDetermination())
-                        .build())
+                .userId(saved.getUserId())
+                .name(saved.getName())
+                .email(saved.getEmail())
+                .nickname(saved.getNickname())
+                .profileUrl(saved.getProfileUrl())
+                .createdAt(saved.getCreatedAt().toLocalDate().toString())
+                .goalStudyTime(saved.getGoalStudyTime())
+                .level(saved.getLevel())
+                .targetDateTitle(saved.getTargetDateTitle())
+                .targetDate(saved.getTargetDate() != null ? saved.getTargetDate().toLocalDate().toString() : null)
+                .determination(saved.getDetermination())
                 .build();
     }
 
@@ -165,20 +163,18 @@ public class UserService {
 
 
         return UserInfoResponse.builder()
-                .data(UserInfoResponse.DataResponse.builder()
-                        .userId(user.getUserId())
-                        .name(user.getName())
-                        .email(user.getEmail())
-                        .nickname(user.getNickname())
-                        .profileUrl(user.getProfileUrl())
-                        .createdAt(user.getCreatedAt().toLocalDate().toString())
-                        .goalStudyTime(user.getGoalStudyTime())
-                        .level(user.getLevel())
-                        .targetDateTitle(user.getTargetDateTitle())
-                        .targetDate(user.getTargetDate() != null ? user.getTargetDate().toLocalDate().toString() : null)
-                        .determination(user.getDetermination())
-                        .todayStudyMinute(todayStudyMinutes)
-                        .build())
+                .userId(user.getUserId())
+                .name(user.getName())
+                .email(user.getEmail())
+                .nickname(user.getNickname())
+                .profileUrl(user.getProfileUrl())
+                .createdAt(user.getCreatedAt().toLocalDate().toString())
+                .goalStudyTime(user.getGoalStudyTime())
+                .level(user.getLevel())
+                .targetDateTitle(user.getTargetDateTitle())
+                .targetDate(user.getTargetDate() != null ? user.getTargetDate().toLocalDate().toString() : null)
+                .determination(user.getDetermination())
+                .todayStudyMinute(todayStudyMinutes)
                 .build();
     }
 
