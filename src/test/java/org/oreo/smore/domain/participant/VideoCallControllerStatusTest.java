@@ -33,7 +33,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @ExtendWith(MockitoExtension.class)
-@DisplayName("VideoCallController - 참가자 상태 조회 API 테스트")
+@DisplayName("VideoCallController - 전체 참가자 조회 API 테스트 (리팩토링)")
 class VideoCallControllerStatusTest {
 
     @Mock
@@ -65,8 +65,8 @@ class VideoCallControllerStatusTest {
     }
 
     @Test
-    @DisplayName("참가자 상태 조회 API 성공 - 방장 + 일반 참가자")
-    void getParticipantStatus_Success() {
+    @DisplayName("전체 참가자 조회 API 성공 - 방장 + 일반 참가자")
+    void getParticipants_Success() {
         // Given
         Long roomId = 1L;
         Authentication auth = new UsernamePasswordAuthenticationToken("100", null);
@@ -135,8 +135,8 @@ class VideoCallControllerStatusTest {
     }
 
     @Test
-    @DisplayName("참가자 상태 조회 API - 빈 방")
-    void getParticipantStatus_EmptyRoom() {
+    @DisplayName("전체 참가자 조회 API - 빈 방")
+    void getParticipants_EmptyRoom() {
         // Given
         Long roomId = 1L;
         Authentication auth = new UsernamePasswordAuthenticationToken("100", null);
@@ -166,8 +166,8 @@ class VideoCallControllerStatusTest {
     }
 
     @Test
-    @DisplayName("참가자 상태 조회 API - 전체 음소거 활성화")
-    void getParticipantStatus_AllMuted() {
+    @DisplayName("전체 참가자 조회 API - 전체 음소거 활성화")
+    void getParticipants_AllMuted() {
         // Given
         Long roomId = 1L;
         Authentication auth = new UsernamePasswordAuthenticationToken("100", null);
@@ -206,8 +206,8 @@ class VideoCallControllerStatusTest {
     }
 
     @Test
-    @DisplayName("참가자 상태 조회 API 실패 - 서비스 예외 (RuntimeException)")
-    void getParticipantStatus_ServiceException() {
+    @DisplayName("전체 참가자 조회 API 실패 - 서비스 예외 (RuntimeException)")
+    void getParticipants_ServiceException() {
         // Given
         Long roomId = 999L;
         Authentication auth = new UsernamePasswordAuthenticationToken("100", null);
@@ -287,8 +287,8 @@ class VideoCallControllerStatusTest {
     }
 
     @Test
-    @DisplayName("참가자 상태 조회 API - MockMvc 테스트 (성공)")
-    void getParticipantStatus_MockMvc_Success() throws Exception {
+    @DisplayName("전체 참가자 조회 API - MockMvc 테스트 (성공)")
+    void getParticipants_MockMvc_Success() throws Exception {
         // Given
         Long roomId = 1L;
 
@@ -313,12 +313,12 @@ class VideoCallControllerStatusTest {
         when(participantService.getParticipantStatus(roomId)).thenReturn(mockResponse);
 
         // When & Then
-        mockMvc.perform(get("/v1/study-rooms/{roomId}/participants/status", roomId)
+        mockMvc.perform(get("/v1/study-rooms/{roomId}/participants", roomId)  // ✅ URL 수정
                         .principal(new UsernamePasswordAuthenticationToken("100", null))
                         .accept(MediaType.APPLICATION_JSON))  // ✅ Accept 헤더 추가
                 .andDo(print())
                 .andExpect(status().isOk())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON))  // ✅ MediaType 상수 사용
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
                 .andExpect(jsonPath("$.participants").isArray())
                 .andExpect(jsonPath("$.participants.length()").value(1))
                 .andExpect(jsonPath("$.participants[0].userId").value(100))
@@ -344,7 +344,7 @@ class VideoCallControllerStatusTest {
                 .thenThrow(new RuntimeException("방을 찾을 수 없습니다"));
 
         // When & Then
-        mockMvc.perform(get("/v1/study-rooms/{roomId}/participants/status", roomId)
+        mockMvc.perform(get("/v1/study-rooms/{roomId}/participants", roomId)  // ✅ URL 수정
                         .principal(new UsernamePasswordAuthenticationToken("100", null))
                         .accept(MediaType.APPLICATION_JSON))  // ✅ Accept 헤더 추가
                 .andDo(print())
@@ -363,10 +363,10 @@ class VideoCallControllerStatusTest {
                 .thenThrow(new IllegalStateException("DB 연결 실패"));
 
         // When & Then
-        mockMvc.perform(get("/v1/study-rooms/{roomId}/participants/status", roomId)
+        mockMvc.perform(get("/v1/study-rooms/{roomId}/participants", roomId)  // ✅ URL 수정
                         .accept(MediaType.APPLICATION_JSON))  // ✅ Accept 헤더 추가
                 .andDo(print())
-                .andExpect(status().isInternalServerError());  // ✅ 500 기대 (컨트롤러 수정 후)
+                .andExpect(status().isInternalServerError());  // ✅ 500 기대
 
         verify(participantService).getParticipantStatus(roomId);
     }

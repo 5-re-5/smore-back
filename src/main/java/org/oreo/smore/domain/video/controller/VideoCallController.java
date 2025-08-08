@@ -247,8 +247,8 @@ public class VideoCallController {
     }
 
 
-    // 참가자 상태 조회
-    @GetMapping("/{roomId}/participants/status")
+    // 참가자 상태 전체 조회
+    @GetMapping("/{roomId}/participants")
     public ResponseEntity<ParticipantStatusResponse> getParticipantStatus(
             @PathVariable Long roomId,
             Authentication authentication) {
@@ -267,15 +267,15 @@ public class VideoCallController {
             return ResponseEntity.ok(response);
 
         } catch (IllegalStateException e) {  // ✅ IllegalStateException을 먼저 처리
-            log.error("❌ 참가자 상태 조회 중 시스템 오류 - 방ID: {}, 오류: {}", roomId, e.getMessage());
+            log.error("❌ 전체 참가자 조회 중 시스템 오류 - 방ID: {}, 오류: {}", roomId, e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
 
         } catch (RuntimeException e) {
-            log.error("❌ 참가자 상태 조회 실패 - 방ID: {}, 오류: {}", roomId, e.getMessage());
+            log.error("❌ 전체 참가자 조회 실패 - 방ID: {}, 오류: {}", roomId, e.getMessage());
             return ResponseEntity.badRequest().build();
 
         } catch (Exception e) {
-            log.error("❌ 참가자 상태 조회 중 시스템 오류 - 방ID: {}, 오류: {}",
+            log.error("❌ 전체 참가자 조회 중 시스템 오류 - 방ID: {}, 오류: {}",
                     roomId, e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
