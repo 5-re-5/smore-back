@@ -216,7 +216,7 @@ public class ParticipantService {
 
 
     // 통합 상태 조회 메서드
-    public ParticipantStatusResponse getParticipantStatus(Long roomId, Long userId) {
+    public ParticipantStatusResponse getParticipantStatus(Long roomId) {
         log.info("참가자 상태 조회 시작 - 방ID: {}", roomId);
 
         // 방 존재 여부 확인
