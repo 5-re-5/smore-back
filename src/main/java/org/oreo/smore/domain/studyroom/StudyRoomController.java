@@ -51,7 +51,7 @@ public class StudyRoomController {
             @RequestParam(name="search", required=false) String search,
             @RequestParam(name="category", required=false) String category,
             @RequestParam(name="sort", defaultValue="latest") String sort,
-            @RequestParam(name="hide-full-rooms", defaultValue="false") boolean hideFullRooms
+            @RequestParam(name="hideFullRooms", defaultValue="false") boolean hideFullRooms
     ) {
         CursorPage<StudyRoomInfoReadResponse> studyRoomDtoCursorPage = studyRoomService.listStudyRooms(page, limit, search, category, sort, hideFullRooms);
         return ResponseEntity.ok(studyRoomDtoCursorPage);
