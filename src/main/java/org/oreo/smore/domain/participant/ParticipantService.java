@@ -2,10 +2,7 @@ package org.oreo.smore.domain.participant;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.oreo.smore.domain.participant.dto.IndividualParticipantResponse;
-import org.oreo.smore.domain.participant.dto.ParticipantInfo;
-import org.oreo.smore.domain.participant.dto.ParticipantStatusResponse;
-import org.oreo.smore.domain.participant.dto.RoomInfo;
+import org.oreo.smore.domain.participant.dto.*;
 import org.oreo.smore.domain.participant.exception.ParticipantException;
 import org.oreo.smore.domain.studyroom.StudyRoom;
 import org.oreo.smore.domain.studyroom.StudyRoomRepository;
@@ -378,5 +375,104 @@ public class ParticipantService {
 
         log.info("✅ 개인 참가자 정보 조회 완료 - 방ID: {}, 사용자: [{}]", roomId, participantInfo.getNickname());
         return participantInfo;
+    }
+
+    // 개인 미디어 상태 변경
+    @Transactional
+    public UpdatePersonalStatusResponse updatePersonalMediaStatus(Long roomId, Long userId,
+                                                                  Boolean audioEnabled, Boolean videoEnabled) {
+        log.info("개인 미디어 상태 변경 시작 - 방ID: {}, 사용자ID: {}, 오디오: {}, 비디오: {}",
+                roomId, userId, audioEnabled, videoEnabled);
+
+        // 방 존재 확인
+        StudyRoom studyRoom = validateStudyRoomExists(roomId);
+
+        // 활성 참가자 조회
+        Participant participant = findActiveParticipant(roomId, userId);
+
+        // 이전 상태 로깅
+        boolean previousAudio = participant.isAudioEnabled();
+        boolean previousVideo = participant.isVideoEnabled();
+
+        log.info("상태 변경 전 - 방ID: {}, 사용자ID: {}, 오디오: {} → {}, 비디오: {} → {}",
+                roomId, userId, previousAudio, audioEnabled, previousVideo, videoEnabled);
+
+        // 미디어 상태 업데이트
+        participant.updateMediaStatus(audioEnabled, videoEnabled, "본인");
+
+        // 사용자 정보 조회 (닉네임 등)
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> {
+                    log.error("사용자를 찾을 수 없음 - 사용자ID: {}", userId);
+                    return new RuntimeException("사용자를 찾을 수 없습니다: " + userId);
+                });
+
+        // 응답 생성
+        UpdatePersonalStatusResponse response = UpdatePersonalStatusResponse.success(
+                userId,
+                user.getNickname(),
+                audioEnabled,
+                videoEnabled
+        );
+
+        log.info("✅ 개인 미디어 상태 변경 완료 - 방ID: {}, 사용자: [{}], 오디오: {}, 비디오: {}",
+                roomId, user.getNickname(), audioEnabled, videoEnabled);
+
+        return response;
+    }
+
+    // 개인 오디오만 상태 변경
+    @Transactional
+    public UpdatePersonalStatusResponse updatePersonalAudioStatus(Long roomId, Long userId, Boolean audioEnabled) {
+        log.info("개인 오디오 상태 변경 - 방ID: {}, 사용자ID: {}, 오디오: {}", roomId, userId, audioEnabled);
+
+        // 방 존재 확인
+        validateStudyRoomExists(roomId);
+
+        // 활성 참가자 조회
+        Participant participant = findActiveParticipant(roomId, userId);
+
+        // 현재 비디오 상태 유지하면서 오디오만 변경
+        boolean currentVideo = participant.isVideoEnabled();
+
+        return updatePersonalMediaStatus(roomId, userId, audioEnabled, currentVideo);
+    }
+
+    // 개인 비디오만 상태 변경
+    @Transactional
+    public UpdatePersonalStatusResponse updatePersonalVideoStatus(Long roomId, Long userId, Boolean videoEnabled) {
+        log.info("개인 비디오 상태 변경 - 방ID: {}, 사용자ID: {}, 비디오: {}", roomId, userId, videoEnabled);
+
+        // 방 존재 확인
+        validateStudyRoomExists(roomId);
+
+        // 활성 참가자 조회
+        Participant participant = findActiveParticipant(roomId, userId);
+
+        // 현재 오디오 상태 유지하면서 비디오만 변경
+        boolean currentAudio = participant.isAudioEnabled();
+
+        return updatePersonalMediaStatus(roomId, userId, currentAudio, videoEnabled);
+    }
+
+    // 미디어 상태 토글
+    @Transactional
+    public UpdatePersonalStatusResponse toggleAudioStatus(Long roomId, Long userId) {
+        log.info("마이크 상태 토글 - 방ID: {}, 사용자ID: {}", roomId, userId);
+
+        Participant participant = findActiveParticipant(roomId, userId);
+        boolean newAudioState = !participant.isAudioEnabled();
+
+        return updatePersonalAudioStatus(roomId, userId, newAudioState);
+    }
+
+    @Transactional
+    public UpdatePersonalStatusResponse toggleVideoStatus(Long roomId, Long userId) {
+        log.info("카메라 상태 토글 - 방ID: {}, 사용자ID: {}", roomId, userId);
+
+        Participant participant = findActiveParticipant(roomId, userId);
+        boolean newVideoState = !participant.isVideoEnabled();
+
+        return updatePersonalVideoStatus(roomId, userId, newVideoState);
     }
 }
