@@ -5,6 +5,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.oreo.smore.domain.participant.Participant;
 import org.oreo.smore.domain.participant.ParticipantService;
+import org.oreo.smore.domain.participant.dto.IndividualParticipantResponse;
 import org.oreo.smore.domain.participant.dto.ParticipantStatusResponse;
 import org.oreo.smore.domain.participant.exception.ParticipantException;
 import org.oreo.smore.domain.studyroom.StudyRoom;
@@ -301,5 +302,84 @@ public class VideoCallController {
                 studyRoom.getRoomId(), newLiveKitRoomId);
 
         return newLiveKitRoomId;
+    }
+
+    // 개인 참가자 상태 조회
+    @GetMapping("/{roomId}/participants/{userId}")
+    public ResponseEntity<IndividualParticipantResponse> getIndividualParticipant(
+            @PathVariable Long roomId,
+            @PathVariable Long userId,
+            Authentication authentication) {
+
+        try {
+            // 인증 확인
+            String principal = authentication != null ? authentication.getPrincipal().toString() : null;
+            log.info("개인 참가자 조회 요청 - 방ID: {}, 대상사용자ID: {}, 요청자: {}", roomId, userId, principal);
+
+            // 본인 확인 또는 방장 권한 확인
+            validateIndividualAccessPermission(roomId, userId, principal);
+
+            // 개인 참가자 상태 조회
+            IndividualParticipantResponse response = participantService.getIndividualParticipantStatus(roomId, userId);
+
+            log.info("✅ 개인 참가자 조회 성공 - 방ID: {}, 사용자: [{}], 방장여부: {}",
+                    roomId, response.getNickname(), response.getIsOwner());
+
+            return ResponseEntity.ok(response);
+
+        } catch (IllegalArgumentException | ParticipantException e) {
+            log.error("❌ 개인 참가자 조회 실패 (잘못된 요청) - 방ID: {}, 사용자ID: {}, 오류: {}",
+                    roomId, userId, e.getMessage());
+            return ResponseEntity.badRequest().build();
+
+        } catch (SecurityException e) {
+            log.error("❌ 개인 참가자 조회 권한 없음 - 방ID: {}, 사용자ID: {}, 요청자: {}, 오류: {}",
+                    roomId, userId, authentication != null ? authentication.getPrincipal() : null, e.getMessage());
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+
+        } catch (RuntimeException e) {
+            log.error("❌ 개인 참가자 조회 실패 - 방ID: {}, 사용자ID: {}, 오류: {}", roomId, userId, e.getMessage());
+            return ResponseEntity.badRequest().build();
+
+        } catch (Exception e) {
+            log.error("❌ 개인 참가자 조회 중 시스템 오류 - 방ID: {}, 사용자ID: {}, 오류: {}",
+                    roomId, userId, e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+    // 개인 조회 권한 검증
+    private void validateIndividualAccessPermission(Long roomId, Long targetUserId, String principal) {
+
+        // 인증되지 않은 사용자는 차단
+        if (principal == null || principal.trim().isEmpty()) {
+            log.warn("❌ 인증되지 않은 개인 참가자 조회 시도 - 방ID: {}, 대상사용자ID: {}", roomId, targetUserId);
+            throw new SecurityException("인증이 필요합니다");
+        }
+
+        Long requestUserId;
+        try {
+            requestUserId = Long.parseLong(principal);
+        } catch (NumberFormatException e) {
+            log.error("❌ 잘못된 사용자 ID 형식 - principal: {}", principal);
+            throw new SecurityException("잘못된 인증 정보입니다");
+        }
+
+        // 본인 조회인 경우 허용
+        if (requestUserId.equals(targetUserId)) {
+            log.debug("✅ 본인 조회 권한 확인 완료 - 사용자ID: {}", requestUserId);
+            return;
+        }
+
+        // 방장 권한 확인
+        try {
+            studyRoomValidator.validateOwnerPermission(roomId, requestUserId);
+            log.info("✅ 방장 권한으로 다른 참가자 조회 허용 - 방장ID: {}, 대상사용자ID: {}", requestUserId, targetUserId);
+
+        } catch (Exception e) {
+            log.warn("❌ 개인 참가자 조회 권한 없음 - 요청자ID: {}, 대상사용자ID: {}, 오류: {}",
+                    requestUserId, targetUserId, e.getMessage());
+            throw new SecurityException("본인 또는 방장만 조회할 수 있습니다");
+        }
     }
 }

@@ -2,6 +2,7 @@ package org.oreo.smore.domain.participant;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.oreo.smore.domain.participant.dto.IndividualParticipantResponse;
 import org.oreo.smore.domain.participant.dto.ParticipantInfo;
 import org.oreo.smore.domain.participant.dto.ParticipantStatusResponse;
 import org.oreo.smore.domain.participant.dto.RoomInfo;
@@ -322,7 +323,60 @@ public class ParticipantService {
 
         } catch (Exception e) {
             log.error("오늘 공부시간 조회 실패 - 사용자ID: {}, 오류: {}", userId, e.getMessage());
-            return 0; // 오류 시 0분 반환
+            return 0;
         }
+    }
+
+    // 개인 참가자 상태 조회
+    public IndividualParticipantResponse getIndividualParticipantStatus(Long roomId, Long userId) {
+        log.info("개인 참가자 상태 조회 시작 - 방ID: {}, 사용자ID: {}", roomId, userId);
+
+        // 방 존재 여부 확인
+        StudyRoom studyRoom = validateStudyRoomExists(roomId);
+
+        // 활성화된 참가자 목록 조회
+        List<Participant> activeParticipants = getActiveParticipants(roomId);
+
+        // 특정 사용자 찾기
+        Participant targetParticipant = activeParticipants.stream()
+                .filter(participant -> participant.getUserId().equals(userId))
+                .findFirst()
+                .orElseThrow(() -> {
+                    log.error("방에서 사용자를 찾을 수 없음 - 방ID: {}, 사용자ID: {}", roomId, userId);
+                    return new ParticipantException.ParticipantNotFoundException(
+                            String.format("방 %d에서 사용자 %d를 찾을 수 없습니다", roomId, userId));
+                });
+
+        // 참가자 정보 변환
+        ParticipantInfo participantInfo = convertToParticipantInfo(targetParticipant, studyRoom);
+
+        // 개인 응답 생성
+        IndividualParticipantResponse response = IndividualParticipantResponse.fromParticipantInfo(
+                participantInfo,
+                studyRoom.getTitle(),
+                activeParticipants.size()
+        );
+
+        log.info("✅ 개인 참가자 상태 조회 완료 - 방ID: {}, 사용자: [{}], 방장여부: {}, 오디오: {}, 비디오: {}",
+                roomId, participantInfo.getNickname(), participantInfo.getIsOwner(),
+                participantInfo.getAudioEnabled(), participantInfo.getVideoEnabled());
+
+        return response;
+    }
+
+    public ParticipantInfo getParticipantInfo(Long roomId, Long userId) {
+        log.info("개인 참가자 정보 조회 - 방ID: {}, 사용자ID: {}", roomId, userId);
+
+        // 방 존재 여부 확인
+        StudyRoom studyRoom = validateStudyRoomExists(roomId);
+
+        // 활성 참가자 중에서 특정 사용자 찾기
+        Participant targetParticipant = findActiveParticipant(roomId, userId);
+
+        // 참가자 정보 변환
+        ParticipantInfo participantInfo = convertToParticipantInfo(targetParticipant, studyRoom);
+
+        log.info("✅ 개인 참가자 정보 조회 완료 - 방ID: {}, 사용자: [{}]", roomId, participantInfo.getNickname());
+        return participantInfo;
     }
 }
