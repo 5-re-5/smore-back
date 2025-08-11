@@ -27,6 +27,17 @@ public class StudyRoomController {
             @Valid @ModelAttribute CreateStudyRoomRequest request,
             Authentication authentication
     ) {
+        // 이미지 유효성 검증
+        if (request.getRoomImage() != null && !request.getRoomImage().isEmpty()) {
+            if (request.getRoomImage().getSize() > 100 * 1024 * 1024) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "파일 크기는 최대 100MB까지 가능합니다.");
+            }
+            String contentType = request.getRoomImage().getContentType();
+            if (!contentType.startsWith("image/")) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "이미지 파일만 업로드 가능합니다.");
+            }
+        }
+
         try {
             String principal = authentication.getPrincipal().toString();
             if (!principal.equals(userId.toString())) {
@@ -42,18 +53,6 @@ public class StudyRoomController {
 
         log.info("✅ 스터디룸 생성 API 응답 성공 - 방ID: {}, 사용자ID: {}, 초대코드: [{}]",
                 response.getRoomId(), userId, response.getInviteHashCode());
-
-        // 이미지 유효성 검증
-        if (request.getRoomImage() != null && !request.getRoomImage().isEmpty()) {
-            if (request.getRoomImage().getSize() > 100 * 1024 * 1024) {
-                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "파일 크기는 최대 100MB까지 가능합니다.");
-            }
-            String contentType = request.getRoomImage().getContentType();
-            if (!contentType.startsWith("image/")) {
-                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "이미지 파일만 업로드 가능합니다.");
-            }
-        }
-
 
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
