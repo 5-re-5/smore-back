@@ -5,10 +5,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.oreo.smore.domain.participant.Participant;
 import org.oreo.smore.domain.participant.ParticipantService;
-import org.oreo.smore.domain.participant.dto.IndividualParticipantResponse;
-import org.oreo.smore.domain.participant.dto.ParticipantStatusResponse;
-import org.oreo.smore.domain.participant.dto.UpdatePersonalStatusRequest;
-import org.oreo.smore.domain.participant.dto.UpdatePersonalStatusResponse;
+import org.oreo.smore.domain.participant.dto.*;
 import org.oreo.smore.domain.participant.exception.ParticipantException;
 import org.oreo.smore.domain.studyroom.StudyRoom;
 import org.oreo.smore.domain.studyroom.StudyRoomRepository;
@@ -19,6 +16,7 @@ import org.oreo.smore.domain.video.dto.TokenResponse;
 import org.oreo.smore.domain.video.service.LiveKitTokenService;
 import org.oreo.smore.domain.video.service.UserIdentityService;
 import org.oreo.smore.domain.video.validator.StudyRoomValidator;
+import org.oreo.smore.global.exception.*;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -45,15 +43,8 @@ public class VideoCallController {
             @Valid @RequestBody JoinRoomRequest request,
             Authentication authentication) {
 
-        try {
-            String principal = authentication.getPrincipal().toString();
-            if (!principal.equals(userId.toString())) {
-                return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
-            }
-        } catch (Exception e) {
-            log.error("Authentication validation failed: {}", e.getMessage());
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
-        }
+        // 인증 검증
+        validateAuthentication(authentication, userId);
 
         // User 테이블에서 nickname 가져오기
         String userNickname = userIdentityService.generateIdentityForUser(userId);
@@ -62,42 +53,58 @@ public class VideoCallController {
 
         // 참가자 등록
         try {
+
+            // 1. 방 존재 여부 확인 (404)
+            StudyRoom studyRoom = studyRoomRepository.findById(roomId)
+                    .orElseThrow(() -> new RoomNotFoundException(roomId));
+
+            // 2. 방 정원 초과 확인 (409)
+            long currentParticipants = participantService.getActiveParticipantCount(roomId);
+            if (currentParticipants >= studyRoom.getMaxParticipants()) {
+                throw new RoomCapacityExceededException(roomId, (int) currentParticipants, studyRoom.getMaxParticipants());
+            }
+
             // 참가자를 DB에 일단 먼저 등록
             Participant participant = participantService.joinRoom(roomId,  userId);
             log.info("✅ 참가자 DB 등록 완료 - 참가자ID: {}, 방ID: {}, 사용자ID: {}",
                     participant.getParticipantId(), roomId, userId);
+
+            // 3. 비밀번호 검증 (401)
+            try {
+                studyRoom = studyRoomValidator.validateRoomAccess(roomId, request, userId);
+            } catch (SecurityException e) {
+                throw new IncorrectPasswordException(roomId);
+            }
+
+            studyRoomValidator.logRoomInfo(studyRoom);
+            // LiveKit 방ID
+            String liveKitRoomName = ensureLiveKitRoom(studyRoom);
+            if (liveKitRoomName == null || liveKitRoomName.trim().isEmpty()) {
+                log.error("❌ LiveKit 방 ID가 없습니다 - 방ID: {}", roomId);
+                throw new IllegalStateException("LiveKit 방 정보가 올바르지 않습니다.");
+            }
+
+            // LiveKit 토큰 생성 요청
+            TokenRequest tokenRequest = TokenRequest.builder()
+                    .roomName(liveKitRoomName)
+                    .identity(userNickname)
+                    .canPublish(request.getCanPublish())
+                    .canSubscribe(request.getCanSubscribe())
+                    .tokenExpirySeconds(request.getTokenExpirySeconds())
+                    .build();
+
+            TokenResponse tokenResponse = tokenService.generateToken(tokenRequest);
+
+            log.info("✅ 스터디룸 입장 성공 - 방ID: {}, 사용자: [{}], 방장여부: [{}]",
+                    roomId, userNickname, studyRoomValidator.isRoomOwner(studyRoom, userId));
+
+
+            return ResponseEntity.ok(tokenResponse);
+
         } catch (Exception e) {
             log.error("❌ 참가자 등록 실패 - 방ID: {}, 사용자ID: {}, 오류: {}", roomId, userId, e.getMessage());
             return ResponseEntity.badRequest().build();
         }
-
-        // 방 입장 검증
-        StudyRoom studyRoom = studyRoomValidator.validateRoomAccess(roomId, request, userId);
-        // 방 정보 로깅
-        studyRoomValidator.logRoomInfo(studyRoom);
-        // LiveKit 방ID
-        String liveKitRoomName = ensureLiveKitRoom(studyRoom);
-        if (liveKitRoomName == null || liveKitRoomName.trim().isEmpty()) {
-            log.error("❌ LiveKit 방 ID가 없습니다 - 방ID: {}", roomId);
-            throw new IllegalStateException("LiveKit 방 정보가 올바르지 않습니다.");
-        }
-
-        // LiveKit 토큰 생성 요청
-        TokenRequest tokenRequest = TokenRequest.builder()
-                .roomName(liveKitRoomName)
-                .identity(userNickname)
-                .canPublish(request.getCanPublish())
-                .canSubscribe(request.getCanSubscribe())
-                .tokenExpirySeconds(request.getTokenExpirySeconds())
-                .build();
-
-        TokenResponse tokenResponse = tokenService.generateToken(tokenRequest);
-
-        log.info("✅ 스터디룸 입장 성공 - 방ID: {}, 사용자: [{}], 방장여부: [{}]",
-                roomId, userNickname, studyRoomValidator.isRoomOwner(studyRoom, userId));
-
-
-        return ResponseEntity.ok(tokenResponse);
     }
 
     // 네트워크 끊김 등 재입장할 경우
@@ -108,17 +115,8 @@ public class VideoCallController {
             @Valid @RequestBody JoinRoomRequest request,
             Authentication authentication
     ) {
-
-        try {
-            String principal = authentication.getPrincipal().toString();
-            if (!principal.equals(userId.toString())) {
-                log.warn("User ID mismatch in rejoin - Principal: {}, Requested: {}", principal, userId);
-                return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
-            }
-        } catch (Exception e) {
-            log.error("Authentication validation failed in rejoin: {}", e.getMessage());
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
-        }
+        // 인증 검증
+        validateAuthentication(authentication, userId);
 
         String userNickname = userIdentityService.generateIdentityForUser(userId);
 
@@ -157,15 +155,9 @@ public class VideoCallController {
             @PathVariable Long roomId,
             @RequestParam Long userId,
             Authentication authentication) {
-        try {
-            String principal = authentication.getPrincipal().toString();
-            if (!principal.equals(userId.toString())) {
-                return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
-            }
-        } catch (Exception e) {
-            log.error("인증 검증 실패: {}", e.getMessage());
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
-        }
+
+        // 인증 검증
+        validateAuthentication(authentication, userId);
 
         log.info("개별 참가자 퇴장 요청 - 방ID: {}, 사용자ID: {}", roomId, userId);
 
@@ -225,15 +217,8 @@ public class VideoCallController {
             @RequestParam Long ownerId,
             Authentication authentication) {
 
-        try {
-            String principal = authentication.getPrincipal().toString();
-            if (!principal.equals(ownerId.toString())) {
-                return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
-            }
-        } catch (Exception e) {
-            log.error("인증 검증 실패: {}", e.getMessage());
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
-        }
+        // 인증 검증
+        validateAuthentication(authentication, ownerId);
 
         log.warn("방 삭제 요청 - 방ID: {}, 방장ID: {}", roomId, ownerId);
 
@@ -580,36 +565,30 @@ public class VideoCallController {
             Authentication authentication) {
 
         try {
-            // 인증 확인
             String principal = authentication != null ? authentication.getPrincipal().toString() : null;
-            if (principal == null || principal.trim().isEmpty()) {
-                log.warn("❌ 인증되지 않은 강퇴 시도 - 방ID: {}, 대상사용자ID: {}", roomId, userId);
-                return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
-            }
-
-            Long requestUserId;
-            try {
-                requestUserId = Long.parseLong(principal);
-            } catch (NumberFormatException e) {
-                log.error("❌ 잘못된 사용자 ID 형식 - principal: {}", principal);
-                return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
-            }
+            Long requestUserId = parseUserId(principal);
 
             log.info("참가자 강퇴 요청 - 방ID: {}, 대상사용자ID: {}, 요청자ID: {}", roomId, userId, requestUserId);
 
-            // 자기 자신을 강퇴하려는 경우 차단
+            // 1. 자기 자신 강퇴 방지 (400)
             if (requestUserId.equals(userId)) {
-                log.warn("❌ 자기 자신 강퇴 시도 - 방ID: {}, 사용자ID: {}", roomId, userId);
-                return ResponseEntity.badRequest().build();
+                throw new SelfBanAttemptException(roomId, userId);
             }
 
-            // 방장 권한 확인
-            studyRoomValidator.validateOwnerPermission(roomId, requestUserId);
+            // 2. 방장 권한 확인 (403)
+            try {
+                studyRoomValidator.validateOwnerPermission(roomId, requestUserId);
+            } catch (Exception e) {
+                throw new NotRoomOwnerException(roomId, requestUserId);
+            }
+
+            // 3. 대상이 참가자인지 확인 (404)
+            if (!participantService.isUserInRoom(roomId, userId)) {
+                throw new UserNotParticipantException(roomId, userId);
+            }
 
             // 참가자 강퇴 처리
             participantService.banParticipant(roomId, userId);
-
-            // 남은 참가자 수 확인
             long remainingCount = participantService.getActiveParticipantCount(roomId);
 
             log.info("✅ 참가자 강퇴 성공 - 방ID: {}, 강퇴된사용자ID: {}, 방장ID: {}, 남은 참가자: {}명",
@@ -621,16 +600,13 @@ public class VideoCallController {
             log.error("❌ 참가자 강퇴 권한 없음 - 방ID: {}, 대상사용자ID: {}, 요청자: {}, 오류: {}",
                     roomId, userId, authentication != null ? authentication.getPrincipal() : null, e.getMessage());
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
-
         } catch (IllegalArgumentException | ParticipantException e) {
             log.error("❌ 참가자 강퇴 실패 (잘못된 요청) - 방ID: {}, 대상사용자ID: {}, 오류: {}",
                     roomId, userId, e.getMessage());
             return ResponseEntity.badRequest().build();
-
         } catch (RuntimeException e) {
             log.error("❌ 참가자 강퇴 실패 - 방ID: {}, 대상사용자ID: {}, 오류: {}", roomId, userId, e.getMessage());
             return ResponseEntity.badRequest().build();
-
         } catch (Exception e) {
             log.error("❌ 참가자 강퇴 중 시스템 오류 - 방ID: {}, 대상사용자ID: {}, 오류: {}",
                     roomId, userId, e.getMessage(), e);
@@ -638,4 +614,111 @@ public class VideoCallController {
         }
     }
 
+    private Long parseUserId(String principal) {
+        if (principal == null || principal.trim().isEmpty()) {
+            throw new UnauthorizedException("인증이 필요합니다");
+        }
+        try {
+            return Long.parseLong(principal);
+        } catch (NumberFormatException e) {
+            throw new UnauthorizedException("잘못된 인증 정보입니다");
+        }
+    }
+
+    // 전체 음소거 제어 (방장만)
+    @PostMapping("/{roomId}/mute-all")
+    public ResponseEntity<MuteAllResponse> controlMuteAll(
+            @PathVariable Long roomId,
+            @RequestBody(required = false) MuteAllRequest request,
+            Authentication authentication) {
+
+        try {
+            // 인증 확인
+            String principal = authentication != null ? authentication.getPrincipal().toString() : null;
+            if (principal == null || principal.trim().isEmpty()) {
+                log.warn("❌ 인증되지 않은 전체 음소거 제어 시도 - 방ID: {}", roomId);
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+            }
+
+            Long requestUserId;
+            try {
+                requestUserId = Long.parseLong(principal);
+            } catch (NumberFormatException e) {
+                log.error("❌ 잘못된 사용자 ID 형식 - principal: {}", principal);
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+            }
+
+            // Request Body가 없으면 토글로 처리
+            String action = (request != null && request.getAction() != null)
+                    ? request.getAction().toLowerCase()
+                    : "toggle";
+
+            log.info("전체 음소거 제어 요청 - 방ID: {}, 방장ID: {}, 액션: {}", roomId, requestUserId, action);
+
+            MuteAllResponse response;
+
+            switch (action) {
+                case "mute":
+                    // 무조건 음소거 설정
+                    response = participantService.muteAllParticipants(roomId, requestUserId);
+                    break;
+
+                case "unmute":
+                    // 무조건 음소거 해제
+                    response = participantService.unmuteAllParticipants(roomId, requestUserId);
+                    break;
+
+                case "toggle":
+                default:
+                    // 현재 상태 토글
+                    response = participantService.toggleMuteAll(roomId, requestUserId);
+                    break;
+            }
+
+            log.info("✅ 전체 음소거 제어 성공 - 방ID: {}, 방장ID: {}, 액션: {}, 결과상태: {}, 영향받은 참가자: {}명",
+                    roomId, requestUserId, action, response.getIsAllMuted() ? "음소거" : "해제",
+                    response.getIsAllMuted() ? response.getMutedParticipants() : response.getUnmutedParticipants());
+
+            return ResponseEntity.ok(response);
+
+        } catch (SecurityException e) {
+            log.error("❌ 전체 음소거 제어 권한 없음 - 방ID: {}, 요청자: {}, 오류: {}",
+                    roomId, authentication != null ? authentication.getPrincipal() : null, e.getMessage());
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+
+        } catch (IllegalArgumentException e) {
+            log.error("❌ 전체 음소거 제어 실패 (잘못된 요청) - 방ID: {}, 오류: {}", roomId, e.getMessage());
+            return ResponseEntity.badRequest().build();
+
+        } catch (IllegalStateException e) {
+            log.error("❌ 전체 음소거 제어 실패 (상태 오류) - 방ID: {}, 오류: {}", roomId, e.getMessage());
+            return ResponseEntity.status(HttpStatus.CONFLICT).build();
+
+        } catch (RuntimeException e) {
+            log.error("❌ 전체 음소거 제어 실패 - 방ID: {}, 오류: {}", roomId, e.getMessage());
+            return ResponseEntity.badRequest().build();
+
+        } catch (Exception e) {
+            log.error("❌ 전체 음소거 제어 중 시스템 오류 - 방ID: {}, 오류: {}", roomId, e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+
+    private void validateAuthentication(Authentication authentication, Long userId) {
+        if (authentication == null) {
+            throw new UnauthorizedException("인증이 필요합니다");
+        }
+
+        String principal;
+        try {
+            principal = authentication.getPrincipal().toString();
+        } catch (Exception e) {
+            throw new UnauthorizedException("인증 정보를 가져올 수 없습니다");
+        }
+
+        if (!principal.equals(userId.toString())) {
+            throw new UnauthorizedException("본인만 접근할 수 있습니다");
+        }
+    }
 }

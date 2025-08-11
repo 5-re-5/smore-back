@@ -134,10 +134,13 @@ class ParticipantServiceTest {
 
             StudyRoom room = mock(StudyRoom.class);
             when(room.isAllMuted()).thenReturn(false);
-            when(room.getUserId()).thenReturn(999L); // 의미 없음
-            when(participantRepository.findActiveParticipantsByRoomId(10L))
+            // 🔥 room.getUserId() 삭제 - 빈 방에서는 사용되지 않음
+
+            when(studyRoomRepository.findById(roomId)).thenReturn(Optional.of(room));
+
+            // 🔥 중복 제거 - 하나만 남기기
+            when(participantRepository.findActiveParticipantsByRoomId(roomId))
                     .thenReturn(Collections.emptyList());
-            when(participantRepository.findActiveParticipantsByRoomId(roomId)).thenReturn(List.of());
 
             // when
             ParticipantStatusResponse res = participantService.getParticipantStatus(roomId);
@@ -148,7 +151,6 @@ class ParticipantServiceTest {
             assertThat(res.getRoomInfo().getTotalParticipants()).isEqualTo(0);
             assertThat(res.getRoomInfo().getIsAllMuted()).isFalse();
         }
-
         @Test
         @DisplayName("실패: 방이 존재하지 않으면 ParticipantException.StudyRoomNotFoundException 발생")
         void 실패_방없음() {
