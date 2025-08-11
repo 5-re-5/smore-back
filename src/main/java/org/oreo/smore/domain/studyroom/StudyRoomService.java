@@ -11,19 +11,15 @@ import org.oreo.smore.domain.studyroom.dto.RecentStudyRoomsResponse;
 import org.oreo.smore.domain.studyroom.dto.StudyRoomDetailResponse;
 import org.oreo.smore.domain.studyroom.dto.StudyRoomInfoReadResponse;
 import org.oreo.smore.domain.participant.ParticipantService;
+import org.oreo.smore.domain.video.service.LiveKitRoomService;
 import org.oreo.smore.global.common.CursorPage;
 import org.oreo.smore.domain.user.User;
 import org.oreo.smore.domain.user.UserRepository;
 import org.springframework.data.domain.*;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.*;
@@ -37,6 +33,7 @@ public class StudyRoomService {
     private final ParticipantRepository participantRepository;
     private final UserRepository userRepo;
     private final ParticipantService participantService;
+    private final LiveKitRoomService liveKitRoomService;
 
     public CursorPage<StudyRoomInfoReadResponse> listStudyRooms(
             Long page,
@@ -165,10 +162,21 @@ public class StudyRoomService {
         log.info("✅ 참가 이력 삭제 완료 - 방ID: {}", roomId);
 
         // 방 삭제
-        roomRepository.deleteById(roomId);
+        StudyRoom room = roomRepository.findById(roomId)
+                .orElseThrow(() -> new IllegalArgumentException("Room not found: " + roomId));
+
+        room.delete();
+        roomRepository.save(room);
         log.info("✅ 스터디룸 삭제 완료 - 방ID: {}", roomId);
 
-        // TODO: LiveKit 방 삭제
+
+        try {
+            String roomName = LiveKitRoomService.generateRoomName(roomId);
+            liveKitRoomService.deleteRoomSafely(roomName);
+            log.info("✅ LiveKit 방 삭제 완료 - 방ID: {}, LiveKit방명: {}", roomId, roomName);
+        } catch (Exception e) {
+            log.error("❌ LiveKit 방 삭제 실패 (무시됨) - 방ID: {}, 오류: {}", roomId, e.getMessage());
+        }
 
         log.warn("✅ 방 삭제 완료 - 방ID: {}, 방장ID: {}, 삭제된 참가자 수: {}명",
                 roomId, ownerId, participantCount);
@@ -216,8 +224,20 @@ public class StudyRoomService {
             roomRepository.deleteById(roomId);
             log.info("✅ 스터디룸 삭제 완료 - 방ID: {}", roomId);
 
-            // TODO: LiveKit 방 삭제
-            // liveKitService.deleteRoom(roomId);
+            StudyRoom room = roomRepository.findById(roomId)
+                    .orElseThrow(() -> new IllegalArgumentException("방을 찾을 수 없습니다: " + roomId));
+
+            room.delete();
+            roomRepository.save(room);
+            log.info("✅ 스터디룸 Soft Delete 완료 - 방ID: {}", roomId);
+
+            try {
+                String roomName = LiveKitRoomService.generateRoomName(roomId);
+                liveKitRoomService.deleteRoomSafely(roomName);
+                log.info("✅ LiveKit 방 삭제 완료 - 방ID: {}, LiveKit방명: {}", roomId, roomName);
+            } catch (Exception liveKitError) {
+                log.error("❌ LiveKit 방 삭제 실패 (무시됨) - 방ID: {}, 오류: {}", roomId, liveKitError.getMessage());
+            }
 
             log.warn("방장 퇴장으로 방 완전 삭제 완료 - 방ID: {}, 방장ID: {}, 총 영향받은 참가자: {}명",
                     roomId, ownerId, participantCount);
