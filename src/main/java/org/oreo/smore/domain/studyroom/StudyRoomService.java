@@ -38,6 +38,7 @@ public class StudyRoomService {
     private final UserRepository userRepo;
     private final ParticipantService participantService;
 
+    // TODO : N+1 문제 해결하기
     public CursorPage<StudyRoomInfoReadResponse> listStudyRooms(
             Long page,
             int limit,
@@ -60,8 +61,11 @@ public class StudyRoomService {
     }
 
     private Sort buildSortOrder(String sort) {
-        String property = isPopularSort(sort) ? "currentParticipants" : "createdAt";
-        return Sort.by(Sort.Direction.DESC, property);
+        if (isPopularSort(sort)) {
+            // 키셋 페이징을 위해 일관된 정렬 컬럼(실존 필드) 사용
+            return Sort.by(Sort.Direction.DESC, "roomId");
+        }
+        return Sort.by(Sort.Direction.DESC, "createdAt");
     }
 
     private boolean isPopularSort(String sort) {
