@@ -8,6 +8,7 @@ import org.oreo.smore.domain.studyroom.dto.CreateStudyRoomRequest;
 import org.oreo.smore.domain.studyroom.dto.CreateStudyRoomResponse;
 import org.oreo.smore.domain.studyroom.exception.StudyRoomCreationException;
 import org.oreo.smore.domain.studyroom.exception.StudyRoomValidationException;
+import org.oreo.smore.global.common.CloudStorageManager;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -19,6 +20,7 @@ import java.util.UUID;
 public class StudyRoomCreationService {
 
     private final StudyRoomRepository studyRoomRepository;
+    private final CloudStorageManager cloudStorageManager;
 
     @Transactional
     public CreateStudyRoomResponse createStudyRoom(Long userId, CreateStudyRoomRequest request) {
@@ -46,6 +48,18 @@ public class StudyRoomCreationService {
             // DB 저장
             StudyRoom savedStudyRoom = studyRoomRepository.save(studyRoom);
             log.info("===스터디룸 DB 저장 완료 - 방ID: {}===", savedStudyRoom.getRoomId());
+
+            // 이미지 업로드
+            if (request.getRoomImage() != null && !request.getRoomImage().isEmpty()) {
+                cloudStorageManager.deleteRoomImage(savedStudyRoom.getRoomId());
+                try {
+                    String uploadedUrl = cloudStorageManager.uploadRoomImage(request.getRoomImage(), savedStudyRoom.getRoomId());
+                    savedStudyRoom.setThumbnailUrl(uploadedUrl);
+                    savedStudyRoom = studyRoomRepository.save(studyRoom);
+                } catch (Exception e) {
+                    throw new RuntimeException("프로필 이미지 업로드 실패", e);
+                }
+            }
 
             // 응답 생성
             CreateStudyRoomResponse response = CreateStudyRoomResponse.from(savedStudyRoom);
