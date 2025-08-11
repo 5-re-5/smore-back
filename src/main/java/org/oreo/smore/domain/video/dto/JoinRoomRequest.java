@@ -21,6 +21,9 @@ public class JoinRoomRequest {
 
     private Boolean canSubscribe;
 
+    private Boolean audioEnabled = true;
+
+    private Boolean videoEnabled = true;
 
     public Integer getTokenExpirySeconds() {
         return tokenExpirySeconds != null ? tokenExpirySeconds : 3600;
