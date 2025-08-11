@@ -1,3 +1,4 @@
+
 package org.oreo.smore.domain.studyroom;
 
 import org.junit.jupiter.api.DisplayName;
@@ -53,13 +54,13 @@ class StudyRoomControllerTest {
                         .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                // 페이징 메타데이터 검증
-                .andExpect(jsonPath("$.cursorId").value(1))
-                .andExpect(jsonPath("$.size").value(20))
-                .andExpect(jsonPath("$.hasNext").value(false))
+                // 🔥 $.data.* 경로로 수정 (ApiResponse 래핑 때문에)
+                .andExpect(jsonPath("$.data.cursorId").value(1))
+                .andExpect(jsonPath("$.data.size").value(20))
+                .andExpect(jsonPath("$.data.hasNext").value(false))
                 // content 배열이 비어있는지 검증
-                .andExpect(jsonPath("$.content").isArray())
-                .andExpect(jsonPath("$.content").isEmpty());
+                .andExpect(jsonPath("$.data.content").isArray())
+                .andExpect(jsonPath("$.data.content").isEmpty());
     }
 
     @Test
@@ -89,10 +90,11 @@ class StudyRoomControllerTest {
                         .param("hide-full-rooms", "true")
                         .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.cursorId").value(100))
-                .andExpect(jsonPath("$.size").value(1))
-                .andExpect(jsonPath("$.content[0].roomId").value(100))
-                .andExpect(jsonPath("$.content[0].title").value("테스트 스터디룸"));
+                // 🔥 $.data.* 경로로 수정
+                .andExpect(jsonPath("$.data.cursorId").value(100))
+                .andExpect(jsonPath("$.data.size").value(1))
+                .andExpect(jsonPath("$.data.content[0].roomId").value(100))
+                .andExpect(jsonPath("$.data.content[0].title").value("테스트 스터디룸"));
     }
 
     @Test
@@ -131,10 +133,11 @@ class StudyRoomControllerTest {
                         .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$.cursorId").value(200))
-                .andExpect(jsonPath("$.size").value(1))
-                .andExpect(jsonPath("$.hasNext").value(false))
-                .andExpect(jsonPath("$.content[0].roomId").value(200))
-                .andExpect(jsonPath("$.content[0].title").value("여러 파람 테스트"));
+                // 🔥 $.data.* 경로로 수정
+                .andExpect(jsonPath("$.data.cursorId").value(200))
+                .andExpect(jsonPath("$.data.size").value(1))
+                .andExpect(jsonPath("$.data.hasNext").value(false))
+                .andExpect(jsonPath("$.data.content[0].roomId").value(200))
+                .andExpect(jsonPath("$.data.content[0].title").value("여러 파람 테스트"));
     }
 }

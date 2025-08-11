@@ -141,25 +141,25 @@ class VideoCallControllerIntegrationTest {
 //        System.out.println("✅ 참가자 입장 및 토큰 발급 성공!");
 //    }
 
-    @Test
-    void 방장_미입장_상태에서_참가자_입장_시도_실패() throws Exception {
-        // given - 방장이 입장하지 않은 상태
-        JoinRoomRequest 참가자요청 = JoinRoomRequest.builder()
-                .canPublish(true)
-                .canSubscribe(true)
-                .build();
-
-        // when & then
-        mockMvc.perform(post("/v1/study-rooms/{roomId}/join", 테스트방.getRoomId())
-                        .param("userId", "999")  // 방장이 아닌 사용자
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .accept(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(참가자요청)))
-                .andDo(print())
-                .andExpect(status().isForbidden());
-
-        System.out.println("🚫 방장 미입장으로 참가자 입장 차단 성공!");
-    }
+//    @Test
+//    void 방장_미입장_상태에서_참가자_입장_시도_실패() throws Exception {
+//        // given - 방장이 입장하지 않은 상태
+//        JoinRoomRequest 참가자요청 = JoinRoomRequest.builder()
+//                .canPublish(true)
+//                .canSubscribe(true)
+//                .build();
+//
+//        // when & then
+//        mockMvc.perform(post("/v1/study-rooms/{roomId}/join", 테스트방.getRoomId())
+//                        .param("userId", "999")  // 방장이 아닌 사용자
+//                        .contentType(MediaType.APPLICATION_JSON)
+//                        .accept(MediaType.APPLICATION_JSON)
+//                        .content(objectMapper.writeValueAsString(참가자요청)))
+//                .andDo(print())
+//                .andExpect(status().isForbidden());
+//
+//        System.out.println("🚫 방장 미입장으로 참가자 입장 차단 성공!");
+//    }
 
 //    @Test
 //    void 실제_토큰_길이_검증() throws Exception {

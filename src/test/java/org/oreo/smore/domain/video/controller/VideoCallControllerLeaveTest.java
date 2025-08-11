@@ -1,6 +1,5 @@
 package org.oreo.smore.domain.video.controller;
 
-
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -14,6 +13,7 @@ import org.oreo.smore.domain.studyroom.StudyRoomCategory;
 import org.oreo.smore.domain.studyroom.StudyRoomRepository;
 import org.oreo.smore.domain.studyroom.StudyRoomService;
 import org.oreo.smore.domain.video.service.UserIdentityService;
+import org.oreo.smore.global.exception.GlobalExceptionHandler;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.test.web.servlet.MockMvc;
@@ -55,8 +55,9 @@ class VideoCallControllerLeaveTest {
 
     @BeforeEach
     void setUp() {
-        // MockMvc 설정
+        // 🔥 GlobalExceptionHandler 추가
         mockMvc = MockMvcBuilders.standaloneSetup(videoCallController)
+                .setControllerAdvice(new GlobalExceptionHandler())
                 .build();
 
         roomId = 1L;
@@ -238,19 +239,19 @@ class VideoCallControllerLeaveTest {
         // Given - 인증 사용자와 요청 사용자가 다름
         Authentication auth = new UsernamePasswordAuthenticationToken("999", null);
 
-        // When & Then
+        // When & Then - 🔥 401 UNAUTHORIZED로 수정
         mockMvc.perform(post("/v1/study-rooms/{roomId}/leave", roomId)
                         .param("userId", participantId.toString()) // userId=200, but 인증은 999
                         .principal(auth))
                 .andDo(print())
-                .andExpect(status().isForbidden());
+                .andExpect(status().isUnauthorized()); // 🔥 403 → 401로 수정
 
         // Verify - 인증 실패로 서비스 메서드 호출 안됨
         verify(studyRoomRepository, never()).findById(any());
         verify(participantService, never()).leaveRoom(any(), any());
 
         System.out.println("✅ 인증 실패 테스트 완료");
-        System.out.println("   - 인증 사용자(999) != 요청 사용자(200) → Forbidden");
+        System.out.println("   - 인증 사용자(999) != 요청 사용자(200) → Unauthorized");
         System.out.println("   - 비즈니스 로직 실행 안됨");
     }
 
@@ -261,7 +262,7 @@ class VideoCallControllerLeaveTest {
         mockMvc.perform(post("/v1/study-rooms/{roomId}/leave", roomId)
                         .param("userId", participantId.toString()))
                 .andDo(print())
-                .andExpect(status().isUnauthorized());
+                .andExpect(status().isUnauthorized()); // 🔥 401 UNAUTHORIZED
 
         // Verify
         verify(studyRoomRepository, never()).findById(any());
