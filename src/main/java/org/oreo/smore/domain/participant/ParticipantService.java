@@ -295,7 +295,7 @@ public class ParticipantService {
                     endOfDay.plusDays(1)      // 자정 넘어가는 케이스도 포함
             );
 
-            int todayStudyMinutes = 0;
+            int todayStudySeconds = 0;
 
             for (StudyTime record : allRecords) {
                 LocalDateTime start = record.getCreatedAt();
@@ -311,12 +311,12 @@ public class ParticipantService {
                 LocalDateTime effectiveEnd = end.isAfter(endOfDay) ? endOfDay : end;
 
                 if (!effectiveStart.isAfter(effectiveEnd)) {
-                    todayStudyMinutes += Duration.between(effectiveStart, effectiveEnd).toMinutes();
+                    todayStudySeconds += Duration.between(effectiveStart, effectiveEnd).getSeconds();
                 }
             }
 
-            log.debug("오늘 공부시간 조회 완료 - 사용자ID: {}, 시간: {}분", userId, todayStudyMinutes);
-            return todayStudyMinutes;
+            log.debug("오늘 공부시간 조회 완료 - 사용자ID: {}, 시간: {}초", userId, todayStudySeconds);
+            return todayStudySeconds;
 
         } catch (Exception e) {
             log.error("오늘 공부시간 조회 실패 - 사용자ID: {}, 오류: {}", userId, e.getMessage());
