@@ -571,4 +571,71 @@ public class VideoCallController {
             throw new SecurityException("본인 또는 방장만 상태를 변경할 수 있습니다");
         }
     }
+
+    // 참가자 강퇴 (방장만)
+    @PostMapping("/{roomId}/participants/{userId}/ban")
+    public ResponseEntity<Void> banParticipant(
+            @PathVariable Long roomId,
+            @PathVariable Long userId,
+            Authentication authentication) {
+
+        try {
+            // 인증 확인
+            String principal = authentication != null ? authentication.getPrincipal().toString() : null;
+            if (principal == null || principal.trim().isEmpty()) {
+                log.warn("❌ 인증되지 않은 강퇴 시도 - 방ID: {}, 대상사용자ID: {}", roomId, userId);
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+            }
+
+            Long requestUserId;
+            try {
+                requestUserId = Long.parseLong(principal);
+            } catch (NumberFormatException e) {
+                log.error("❌ 잘못된 사용자 ID 형식 - principal: {}", principal);
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+            }
+
+            log.info("참가자 강퇴 요청 - 방ID: {}, 대상사용자ID: {}, 요청자ID: {}", roomId, userId, requestUserId);
+
+            // 자기 자신을 강퇴하려는 경우 차단
+            if (requestUserId.equals(userId)) {
+                log.warn("❌ 자기 자신 강퇴 시도 - 방ID: {}, 사용자ID: {}", roomId, userId);
+                return ResponseEntity.badRequest().build();
+            }
+
+            // 방장 권한 확인
+            studyRoomValidator.validateOwnerPermission(roomId, requestUserId);
+
+            // 참가자 강퇴 처리
+            participantService.banParticipant(roomId, userId);
+
+            // 남은 참가자 수 확인
+            long remainingCount = participantService.getActiveParticipantCount(roomId);
+
+            log.info("✅ 참가자 강퇴 성공 - 방ID: {}, 강퇴된사용자ID: {}, 방장ID: {}, 남은 참가자: {}명",
+                    roomId, userId, requestUserId, remainingCount);
+
+            return ResponseEntity.ok().build();
+
+        } catch (SecurityException e) {
+            log.error("❌ 참가자 강퇴 권한 없음 - 방ID: {}, 대상사용자ID: {}, 요청자: {}, 오류: {}",
+                    roomId, userId, authentication != null ? authentication.getPrincipal() : null, e.getMessage());
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+
+        } catch (IllegalArgumentException | ParticipantException e) {
+            log.error("❌ 참가자 강퇴 실패 (잘못된 요청) - 방ID: {}, 대상사용자ID: {}, 오류: {}",
+                    roomId, userId, e.getMessage());
+            return ResponseEntity.badRequest().build();
+
+        } catch (RuntimeException e) {
+            log.error("❌ 참가자 강퇴 실패 - 방ID: {}, 대상사용자ID: {}, 오류: {}", roomId, userId, e.getMessage());
+            return ResponseEntity.badRequest().build();
+
+        } catch (Exception e) {
+            log.error("❌ 참가자 강퇴 중 시스템 오류 - 방ID: {}, 대상사용자ID: {}, 오류: {}",
+                    roomId, userId, e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
 }
