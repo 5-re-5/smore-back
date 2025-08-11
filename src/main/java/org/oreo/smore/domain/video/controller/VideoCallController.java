@@ -7,6 +7,8 @@ import org.oreo.smore.domain.participant.Participant;
 import org.oreo.smore.domain.participant.ParticipantService;
 import org.oreo.smore.domain.participant.dto.IndividualParticipantResponse;
 import org.oreo.smore.domain.participant.dto.ParticipantStatusResponse;
+import org.oreo.smore.domain.participant.dto.UpdatePersonalStatusRequest;
+import org.oreo.smore.domain.participant.dto.UpdatePersonalStatusResponse;
 import org.oreo.smore.domain.participant.exception.ParticipantException;
 import org.oreo.smore.domain.studyroom.StudyRoom;
 import org.oreo.smore.domain.studyroom.StudyRoomRepository;
@@ -380,6 +382,193 @@ public class VideoCallController {
             log.warn("❌ 개인 참가자 조회 권한 없음 - 요청자ID: {}, 대상사용자ID: {}, 오류: {}",
                     requestUserId, targetUserId, e.getMessage());
             throw new SecurityException("본인 또는 방장만 조회할 수 있습니다");
+        }
+    }
+
+    // 개인 참가자 미디어 상태 변경
+    @PatchMapping("/{roomId}/participants/{userId}")
+    public ResponseEntity<UpdatePersonalStatusResponse> updateParticipantStatus(
+            @PathVariable Long roomId,
+            @PathVariable Long userId,
+            @Valid @RequestBody UpdatePersonalStatusRequest request,
+            Authentication authentication) {
+
+        try {
+            // 인증 확인
+            String principal = authentication != null ? authentication.getPrincipal().toString() : null;
+            log.info("개인 참가자 상태 변경 요청 - 방ID: {}, 대상사용자ID: {}, 요청자: {}, 변경내용: {}",
+                    roomId, userId, principal, request);
+
+            // 본인 확인 또는 방장 권한 확인
+            validateUpdatePermission(roomId, userId, principal, request);
+
+            // 개인 미디어 상태 변경
+            UpdatePersonalStatusResponse response = participantService.updatePersonalMediaStatus(
+                    roomId, userId, request.getAudioEnabled(), request.getVideoEnabled());
+
+            log.info("✅ 개인 참가자 상태 변경 성공 - 방ID: {}, 사용자: [{}], 오디오: {}, 비디오: {}",
+                    roomId, response.getNickname(), response.getAudioEnabled(), response.getVideoEnabled());
+
+            return ResponseEntity.ok(response);
+
+        } catch (IllegalArgumentException | ParticipantException e) {
+            log.error("❌ 개인 참가자 상태 변경 실패 (잘못된 요청) - 방ID: {}, 사용자ID: {}, 오류: {}",
+                    roomId, userId, e.getMessage());
+            return ResponseEntity.badRequest().build();
+
+        } catch (SecurityException e) {
+            log.error("❌ 개인 참가자 상태 변경 권한 없음 - 방ID: {}, 사용자ID: {}, 요청자: {}, 오류: {}",
+                    roomId, userId, authentication != null ? authentication.getPrincipal() : null, e.getMessage());
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+
+        } catch (IllegalStateException e) {
+            log.error("❌ 개인 참가자 상태 변경 중 시스템 오류 - 방ID: {}, 사용자ID: {}, 오류: {}",
+                    roomId, userId, e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+
+        } catch (RuntimeException e) {
+            log.error("❌ 개인 참가자 상태 변경 실패 - 방ID: {}, 사용자ID: {}, 오류: {}", roomId, userId, e.getMessage());
+            return ResponseEntity.badRequest().build();
+
+        } catch (Exception e) {
+            log.error("❌ 개인 참가자 상태 변경 중 시스템 오류 - 방ID: {}, 사용자ID: {}, 오류: {}",
+                    roomId, userId, e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+    // 개인 상태 변경 권한 검증
+    private void validateUpdatePermission(Long roomId, Long targetUserId, String principal,
+                                          UpdatePersonalStatusRequest request) {
+
+        // 인증되지 않은 사용자는 차단
+        if (principal == null || principal.trim().isEmpty()) {
+            log.warn("❌ 인증되지 않은 개인 참가자 상태 변경 시도 - 방ID: {}, 대상사용자ID: {}", roomId, targetUserId);
+            throw new SecurityException("인증이 필요합니다");
+        }
+
+        Long requestUserId;
+        try {
+            requestUserId = Long.parseLong(principal);
+        } catch (NumberFormatException e) {
+            log.error("❌ 잘못된 사용자 ID 형식 - principal: {}", principal);
+            throw new SecurityException("잘못된 인증 정보입니다");
+        }
+
+        // 본인 수정인 경우 허용
+        if (requestUserId.equals(targetUserId)) {
+            log.debug("✅ 본인 상태 변경 권한 확인 완료 - 사용자ID: {}, 오디오: {}, 비디오: {}",
+                    requestUserId, request.getAudioEnabled(), request.getVideoEnabled());
+            return;
+        }
+
+        // 방장 권한 확인 (다른 참가자 상태 변경)
+        try {
+            studyRoomValidator.validateOwnerPermission(roomId, requestUserId);
+            log.info("✅ 방장 권한으로 다른 참가자 상태 변경 허용 - 방장ID: {}, 대상사용자ID: {}, 변경내용: {}",
+                    requestUserId, targetUserId, request);
+
+        } catch (Exception e) {
+            log.warn("❌ 개인 참가자 상태 변경 권한 없음 - 요청자ID: {}, 대상사용자ID: {}, 오류: {}",
+                    requestUserId, targetUserId, e.getMessage());
+            throw new SecurityException("본인 또는 방장만 상태를 변경할 수 있습니다");
+        }
+    }
+
+    // 개인 오디오 상태만 토글
+    @PatchMapping("/{roomId}/participants/{userId}/audio/toggle")
+    public ResponseEntity<UpdatePersonalStatusResponse> toggleParticipantAudio(
+            @PathVariable Long roomId,
+            @PathVariable Long userId,
+            Authentication authentication) {
+
+        try {
+            String principal = authentication != null ? authentication.getPrincipal().toString() : null;
+            log.info("개인 오디오 토글 요청 - 방ID: {}, 대상사용자ID: {}, 요청자: {}", roomId, userId, principal);
+
+            // 본인 확인 또는 방장 권한 확인 (토글은 요청 객체가 없으므로 별도 검증)
+            validateTogglePermission(roomId, userId, principal);
+
+            // 오디오 상태 토글
+            UpdatePersonalStatusResponse response = participantService.toggleAudioStatus(roomId, userId);
+
+            log.info("✅ 개인 오디오 토글 성공 - 방ID: {}, 사용자: [{}], 오디오: {}",
+                    roomId, response.getNickname(), response.getAudioEnabled());
+
+            return ResponseEntity.ok(response);
+
+        } catch (SecurityException e) {
+            log.error("❌ 개인 오디오 토글 권한 없음 - 방ID: {}, 사용자ID: {}, 요청자: {}",
+                    roomId, userId, authentication != null ? authentication.getPrincipal() : null);
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+
+        } catch (Exception e) {
+            log.error("❌ 개인 오디오 토글 실패 - 방ID: {}, 사용자ID: {}, 오류: {}", roomId, userId, e.getMessage());
+            return ResponseEntity.badRequest().build();
+        }
+    }
+
+    // 개인 비디오 상태만 토글
+    @PatchMapping("/{roomId}/participants/{userId}/video/toggle")
+    public ResponseEntity<UpdatePersonalStatusResponse> toggleParticipantVideo(
+            @PathVariable Long roomId,
+            @PathVariable Long userId,
+            Authentication authentication) {
+
+        try {
+            String principal = authentication != null ? authentication.getPrincipal().toString() : null;
+            log.info("개인 비디오 토글 요청 - 방ID: {}, 대상사용자ID: {}, 요청자: {}", roomId, userId, principal);
+
+            // 본인 확인 또는 방장 권한 확인
+            validateTogglePermission(roomId, userId, principal);
+
+            // 비디오 상태 토글
+            UpdatePersonalStatusResponse response = participantService.toggleVideoStatus(roomId, userId);
+
+            log.info("✅ 개인 비디오 토글 성공 - 방ID: {}, 사용자: [{}], 비디오: {}",
+                    roomId, response.getNickname(), response.getVideoEnabled());
+
+            return ResponseEntity.ok(response);
+
+        } catch (SecurityException e) {
+            log.error("❌ 개인 비디오 토글 권한 없음 - 방ID: {}, 사용자ID: {}, 요청자: {}",
+                    roomId, userId, authentication != null ? authentication.getPrincipal() : null);
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+
+        } catch (Exception e) {
+            log.error("❌ 개인 비디오 토글 실패 - 방ID: {}, 사용자ID: {}, 오류: {}", roomId, userId, e.getMessage());
+            return ResponseEntity.badRequest().build();
+        }
+    }
+
+    // 토글 권한 검증
+    private void validateTogglePermission(Long roomId, Long targetUserId, String principal) {
+
+        if (principal == null || principal.trim().isEmpty()) {
+            throw new SecurityException("인증이 필요합니다");
+        }
+
+        Long requestUserId;
+        try {
+            requestUserId = Long.parseLong(principal);
+        } catch (NumberFormatException e) {
+            throw new SecurityException("잘못된 인증 정보입니다");
+        }
+
+        // 본인 토글인 경우 허용
+        if (requestUserId.equals(targetUserId)) {
+            log.debug("✅ 본인 토글 권한 확인 완료 - 사용자ID: {}", requestUserId);
+            return;
+        }
+
+        // 방장 권한 확인
+        try {
+            studyRoomValidator.validateOwnerPermission(roomId, requestUserId);
+            log.info("✅ 방장 권한으로 다른 참가자 토글 허용 - 방장ID: {}, 대상사용자ID: {}",
+                    requestUserId, targetUserId);
+
+        } catch (Exception e) {
+            throw new SecurityException("본인 또는 방장만 상태를 변경할 수 있습니다");
         }
     }
 }

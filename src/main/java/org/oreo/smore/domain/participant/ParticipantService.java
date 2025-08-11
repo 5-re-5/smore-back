@@ -475,4 +475,160 @@ public class ParticipantService {
 
         return updatePersonalVideoStatus(roomId, userId, newVideoState);
     }
+
+    // 전체 음소거 설정 (방장만)
+    @Transactional
+    public MuteAllResponse muteAllParticipants(Long roomId, Long ownerId) {
+        log.info("전체 음소거 설정 시작 - 방ID: {}, 방장ID: {}", roomId, ownerId);
+
+        // 방 존재 확인
+        StudyRoom studyRoom = validateStudyRoomExists(roomId);
+
+        // 방장 권한 확인
+        validateOwnerPermission(studyRoom, ownerId);
+
+        // 이미 음소거인지 확인
+        if (studyRoom.isAllMuted()) {
+            log.warn("이미 전체 음소거 상태 - 방ID: {}", roomId);
+            throw new IllegalStateException("이미 전체 음소거 상태입니다");
+        }
+
+        // 현재 활성화 참가자 조회
+        List<Participant> activeParticipants = getActiveParticipants(roomId);
+
+        if (activeParticipants.isEmpty()) {
+            log.warn("참가자가 없어 전체 음소거 불가 - 방ID: {}", roomId);
+            throw new IllegalStateException("참가자가 없어 전체 음소거를 설정할 수 없습니다");
+        }
+
+        int muteCount = 0;
+        for (Participant participant : activeParticipants) {
+            // 방장은 음소거하지 않음
+            if (participant.getUserId().equals(ownerId)) {
+                log.debug("방장은 음소거하지 않음 - 사용자ID: {}", ownerId);
+                continue;
+            }
+
+            if (!participant.isAudioEnabled()) {
+                log.debug("이미 음소거된 참가자 - 사용자ID: {}", participant.getUserId());
+                continue;
+            }
+
+            participant.disableAudio("방장(전체음소거)");
+            muteCount++;
+            log.debug("참가자 음소거 처리 - 사용자ID: {}", participant.getUserId());
+        }
+
+        studyRoom.enableAllMute();
+        studyRoomRepository.save(studyRoom);
+
+        // 응답 생성
+        MuteAllResponse response = MuteAllResponse.builder()
+                .roomId(roomId)
+                .isAllMuted(true)
+                .totalParticipants(activeParticipants.size())
+                .mutedParticipants(muteCount)
+                .message(String.format("전체 음소거가 설정되었습니다 (%d명 음소거)", muteCount))
+                .performedBy(ownerId)
+                .build();
+
+        log.info("✅ 전체 음소거 설정 완료 - 방ID: {}, 방장ID: {}, 음소거된 참가자: {}명, 전체 참가자: {}명",
+                roomId, ownerId, muteCount, activeParticipants.size());
+
+        return response;
+    }
+
+    // 전체 음소거 해제 (방장만)
+    @Transactional
+    public MuteAllResponse unmuteAllParticipants(Long roomId, Long ownerId) {
+        log.info("전체 음소거 해제 시작 - 방ID: {}, 방장ID: {}", roomId, ownerId);
+
+        // 방 존재 확인
+        StudyRoom studyRoom = validateStudyRoomExists(roomId);
+
+        // 방장 권한 확인
+        validateOwnerPermission(studyRoom, ownerId);
+
+        // 전체 음소거 상태가 아니어도 처리 계속
+        if (!studyRoom.isAllMuted()) {
+            log.warn("전체 음소거 상태가 아니지만 모든 참가자 음소거 해제 진행 - 방ID: {}", roomId);
+        }
+
+        // 현재 활성화 참가자 조회
+        List<Participant> activeParticipants = getActiveParticipants(roomId);
+
+        if (activeParticipants.isEmpty()) {
+            log.warn("참가자가 없어 전체 음소거 해제 불가 - 방ID: {}", roomId);
+            // 빈 방이라도 전체 음소거 상태는 해제
+            studyRoom.disableAllMute();
+            studyRoomRepository.save(studyRoom);
+
+            return MuteAllResponse.builder()
+                    .roomId(roomId)
+                    .isAllMuted(false)
+                    .totalParticipants(0)
+                    .unmutedParticipants(0)
+                    .message("전체 음소거가 해제되었습니다 (참가자 없음)")
+                    .performedBy(ownerId)
+                    .build();
+        }
+
+        // 모든 참가자 음소거 해제
+        int unmutedCount = 0;
+        for (Participant participant : activeParticipants) {
+            // 이미 음소거 해제된 참가자는 스킵
+            if (participant.isAudioEnabled()) {
+                log.debug("이미 음소거 해제된 참가자 - 사용자ID: {}", participant.getUserId());
+                continue;
+            }
+
+            participant.enableAudio("방장(전체음소거해제)");
+            unmutedCount++;
+            log.debug("참가자 음소거 해제 - 사용자ID: {}", participant.getUserId());
+        }
+
+        // StudyRoom 전체 음소거 상태 해제
+        studyRoom.disableAllMute();
+        studyRoomRepository.save(studyRoom);
+
+        // 응답 생성
+        MuteAllResponse response = MuteAllResponse.builder()
+                .roomId(roomId)
+                .isAllMuted(false)
+                .totalParticipants(activeParticipants.size())
+                .unmutedParticipants(unmutedCount)
+                .message(String.format("전체 음소거가 해제되었습니다 (%d명 해제)", unmutedCount))
+                .performedBy(ownerId)
+                .build();
+
+        log.info("✅ 전체 음소거 해제 완료 - 방ID: {}, 방장ID: {}, 해제된 참가자: {}명, 전체 참가자: {}명",
+                roomId, ownerId, unmutedCount, activeParticipants.size());
+
+        return response;
+    }
+
+    // 전체 음소거 토글
+    @Transactional
+    public MuteAllResponse toggleMuteAll(Long roomId, Long ownerId) {
+        log.info("전체 음소거 토글 - 방ID: {}, 방장ID: {}", roomId, ownerId);
+
+        StudyRoom studyRoom = validateStudyRoomExists(roomId);
+
+        if (studyRoom.isAllMuted()) {
+            log.debug("현재 전체 음소거 상태 → 해제로 토글");
+            return unmuteAllParticipants(roomId, ownerId);
+        } else {
+            log.debug("현재 전체 음소거 아님 → 설정으로 토글");
+            return muteAllParticipants(roomId, ownerId);
+        }
+    }
+
+    private void validateOwnerPermission(StudyRoom studyRoom, Long userId) {
+
+        if (!studyRoom.getUserId().equals(userId)) {
+            log.error("방장 권한 없음 - 방ID: {}, 실제방장: {}, 요청자: {}",
+                    studyRoom.getRoomId(), studyRoom.getUserId(), userId);
+            throw new SecurityException("방장만 전체 음소거를 설정/해제할 수 있습니다");
+        }
+    }
 }
