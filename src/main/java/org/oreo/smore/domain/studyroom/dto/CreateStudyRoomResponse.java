@@ -25,11 +25,13 @@ public class CreateStudyRoomResponse {
     private LocalDateTime createdAt;
     private Long ownerId;
     private String liveKitRoomId;
+    private String thumbnailUrl;
 
     public CreateStudyRoomResponse(Long roomId, String title, String description,
                                    boolean hasPassword, Integer maxParticipants, String tag,
                                    StudyRoomCategory category, Integer focusTime, Integer breakTime,
-                                   String inviteHashCode, LocalDateTime createdAt, Long ownerId,  String liveKitRoomId) {
+                                   String inviteHashCode, LocalDateTime createdAt, Long ownerId,
+                                   String liveKitRoomId, String thumbnailUrl) {
         this.roomId = roomId;
         this.title = title;
         this.description = description;
@@ -43,6 +45,7 @@ public class CreateStudyRoomResponse {
         this.createdAt = createdAt;
         this.ownerId = ownerId;
         this.liveKitRoomId = liveKitRoomId;
+        this.thumbnailUrl = thumbnailUrl;
     }
 
     public static CreateStudyRoomResponse from(org.oreo.smore.domain.studyroom.StudyRoom studyRoom) {
@@ -60,6 +63,7 @@ public class CreateStudyRoomResponse {
                 .createdAt(studyRoom.getCreatedAt())
                 .ownerId(studyRoom.getUserId())
                 .liveKitRoomId(studyRoom.getLiveKitRoomId())
+                .thumbnailUrl(studyRoom.getThumbnailUrl())
                 .build();
     }
 }
