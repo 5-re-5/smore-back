@@ -2,9 +2,7 @@ package org.oreo.smore.domain.participant;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.oreo.smore.domain.participant.dto.ParticipantInfo;
-import org.oreo.smore.domain.participant.dto.ParticipantStatusResponse;
-import org.oreo.smore.domain.participant.dto.RoomInfo;
+import org.oreo.smore.domain.participant.dto.*;
 import org.oreo.smore.domain.participant.exception.ParticipantException;
 import org.oreo.smore.domain.studyroom.StudyRoom;
 import org.oreo.smore.domain.studyroom.StudyRoomRepository;
@@ -322,7 +320,315 @@ public class ParticipantService {
 
         } catch (Exception e) {
             log.error("오늘 공부시간 조회 실패 - 사용자ID: {}, 오류: {}", userId, e.getMessage());
-            return 0; // 오류 시 0분 반환
+            return 0;
+        }
+    }
+
+    // 개인 참가자 상태 조회
+    public IndividualParticipantResponse getIndividualParticipantStatus(Long roomId, Long userId) {
+        log.info("개인 참가자 상태 조회 시작 - 방ID: {}, 사용자ID: {}", roomId, userId);
+
+        // 방 존재 여부 확인
+        StudyRoom studyRoom = validateStudyRoomExists(roomId);
+
+        // 활성화된 참가자 목록 조회
+        List<Participant> activeParticipants = getActiveParticipants(roomId);
+
+        // 특정 사용자 찾기
+        Participant targetParticipant = activeParticipants.stream()
+                .filter(participant -> participant.getUserId().equals(userId))
+                .findFirst()
+                .orElseThrow(() -> {
+                    log.error("방에서 사용자를 찾을 수 없음 - 방ID: {}, 사용자ID: {}", roomId, userId);
+                    return new ParticipantException.ParticipantNotFoundException(
+                            String.format("방 %d에서 사용자 %d를 찾을 수 없습니다", roomId, userId));
+                });
+
+        // 참가자 정보 변환
+        ParticipantInfo participantInfo = convertToParticipantInfo(targetParticipant, studyRoom);
+
+        // 개인 응답 생성
+        IndividualParticipantResponse response = IndividualParticipantResponse.fromParticipantInfo(
+                participantInfo,
+                studyRoom.getTitle(),
+                activeParticipants.size()
+        );
+
+        log.info("✅ 개인 참가자 상태 조회 완료 - 방ID: {}, 사용자: [{}], 방장여부: {}, 오디오: {}, 비디오: {}",
+                roomId, participantInfo.getNickname(), participantInfo.getIsOwner(),
+                participantInfo.getAudioEnabled(), participantInfo.getVideoEnabled());
+
+        return response;
+    }
+
+    public ParticipantInfo getParticipantInfo(Long roomId, Long userId) {
+        log.info("개인 참가자 정보 조회 - 방ID: {}, 사용자ID: {}", roomId, userId);
+
+        // 방 존재 여부 확인
+        StudyRoom studyRoom = validateStudyRoomExists(roomId);
+
+        // 활성 참가자 중에서 특정 사용자 찾기
+        Participant targetParticipant = findActiveParticipant(roomId, userId);
+
+        // 참가자 정보 변환
+        ParticipantInfo participantInfo = convertToParticipantInfo(targetParticipant, studyRoom);
+
+        log.info("✅ 개인 참가자 정보 조회 완료 - 방ID: {}, 사용자: [{}]", roomId, participantInfo.getNickname());
+        return participantInfo;
+    }
+
+    // 개인 미디어 상태 변경
+    @Transactional
+    public UpdatePersonalStatusResponse updatePersonalMediaStatus(Long roomId, Long userId,
+                                                                  Boolean audioEnabled, Boolean videoEnabled) {
+        log.info("개인 미디어 상태 변경 시작 - 방ID: {}, 사용자ID: {}, 오디오: {}, 비디오: {}",
+                roomId, userId, audioEnabled, videoEnabled);
+
+        // 방 존재 확인
+        StudyRoom studyRoom = validateStudyRoomExists(roomId);
+
+        // 활성 참가자 조회
+        Participant participant = findActiveParticipant(roomId, userId);
+
+        // 이전 상태 로깅
+        boolean previousAudio = participant.isAudioEnabled();
+        boolean previousVideo = participant.isVideoEnabled();
+
+        log.info("상태 변경 전 - 방ID: {}, 사용자ID: {}, 오디오: {} → {}, 비디오: {} → {}",
+                roomId, userId, previousAudio, audioEnabled, previousVideo, videoEnabled);
+
+        // 미디어 상태 업데이트
+        participant.updateMediaStatus(audioEnabled, videoEnabled, "본인");
+
+        // 사용자 정보 조회 (닉네임 등)
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> {
+                    log.error("사용자를 찾을 수 없음 - 사용자ID: {}", userId);
+                    return new RuntimeException("사용자를 찾을 수 없습니다: " + userId);
+                });
+
+        // 응답 생성
+        UpdatePersonalStatusResponse response = UpdatePersonalStatusResponse.success(
+                userId,
+                user.getNickname(),
+                audioEnabled,
+                videoEnabled
+        );
+
+        log.info("✅ 개인 미디어 상태 변경 완료 - 방ID: {}, 사용자: [{}], 오디오: {}, 비디오: {}",
+                roomId, user.getNickname(), audioEnabled, videoEnabled);
+
+        return response;
+    }
+
+    // 개인 오디오만 상태 변경
+    @Transactional
+    public UpdatePersonalStatusResponse updatePersonalAudioStatus(Long roomId, Long userId, Boolean audioEnabled) {
+        log.info("개인 오디오 상태 변경 - 방ID: {}, 사용자ID: {}, 오디오: {}", roomId, userId, audioEnabled);
+
+        // 방 존재 확인
+        validateStudyRoomExists(roomId);
+
+        // 활성 참가자 조회
+        Participant participant = findActiveParticipant(roomId, userId);
+
+        // 현재 비디오 상태 유지하면서 오디오만 변경
+        boolean currentVideo = participant.isVideoEnabled();
+
+        return updatePersonalMediaStatus(roomId, userId, audioEnabled, currentVideo);
+    }
+
+    // 개인 비디오만 상태 변경
+    @Transactional
+    public UpdatePersonalStatusResponse updatePersonalVideoStatus(Long roomId, Long userId, Boolean videoEnabled) {
+        log.info("개인 비디오 상태 변경 - 방ID: {}, 사용자ID: {}, 비디오: {}", roomId, userId, videoEnabled);
+
+        // 방 존재 확인
+        validateStudyRoomExists(roomId);
+
+        // 활성 참가자 조회
+        Participant participant = findActiveParticipant(roomId, userId);
+
+        // 현재 오디오 상태 유지하면서 비디오만 변경
+        boolean currentAudio = participant.isAudioEnabled();
+
+        return updatePersonalMediaStatus(roomId, userId, currentAudio, videoEnabled);
+    }
+
+    // 미디어 상태 토글
+    @Transactional
+    public UpdatePersonalStatusResponse toggleAudioStatus(Long roomId, Long userId) {
+        log.info("마이크 상태 토글 - 방ID: {}, 사용자ID: {}", roomId, userId);
+
+        Participant participant = findActiveParticipant(roomId, userId);
+        boolean newAudioState = !participant.isAudioEnabled();
+
+        return updatePersonalAudioStatus(roomId, userId, newAudioState);
+    }
+
+    @Transactional
+    public UpdatePersonalStatusResponse toggleVideoStatus(Long roomId, Long userId) {
+        log.info("카메라 상태 토글 - 방ID: {}, 사용자ID: {}", roomId, userId);
+
+        Participant participant = findActiveParticipant(roomId, userId);
+        boolean newVideoState = !participant.isVideoEnabled();
+
+        return updatePersonalVideoStatus(roomId, userId, newVideoState);
+    }
+
+    // 전체 음소거 설정 (방장만)
+    @Transactional
+    public MuteAllResponse muteAllParticipants(Long roomId, Long ownerId) {
+        log.info("전체 음소거 설정 시작 - 방ID: {}, 방장ID: {}", roomId, ownerId);
+
+        // 방 존재 확인
+        StudyRoom studyRoom = validateStudyRoomExists(roomId);
+
+        // 방장 권한 확인
+        validateOwnerPermission(studyRoom, ownerId);
+
+        // 이미 음소거인지 확인
+        if (studyRoom.isAllMuted()) {
+            log.warn("이미 전체 음소거 상태 - 방ID: {}", roomId);
+            throw new IllegalStateException("이미 전체 음소거 상태입니다");
+        }
+
+        // 현재 활성화 참가자 조회
+        List<Participant> activeParticipants = getActiveParticipants(roomId);
+
+        if (activeParticipants.isEmpty()) {
+            log.warn("참가자가 없어 전체 음소거 불가 - 방ID: {}", roomId);
+            throw new IllegalStateException("참가자가 없어 전체 음소거를 설정할 수 없습니다");
+        }
+
+        int muteCount = 0;
+        for (Participant participant : activeParticipants) {
+            // 방장은 음소거하지 않음
+            if (participant.getUserId().equals(ownerId)) {
+                log.debug("방장은 음소거하지 않음 - 사용자ID: {}", ownerId);
+                continue;
+            }
+
+            if (!participant.isAudioEnabled()) {
+                log.debug("이미 음소거된 참가자 - 사용자ID: {}", participant.getUserId());
+                continue;
+            }
+
+            participant.disableAudio("방장(전체음소거)");
+            muteCount++;
+            log.debug("참가자 음소거 처리 - 사용자ID: {}", participant.getUserId());
+        }
+
+        studyRoom.enableAllMute();
+        studyRoomRepository.save(studyRoom);
+
+        // 응답 생성
+        MuteAllResponse response = MuteAllResponse.builder()
+                .roomId(roomId)
+                .isAllMuted(true)
+                .totalParticipants(activeParticipants.size())
+                .mutedParticipants(muteCount)
+                .message(String.format("전체 음소거가 설정되었습니다 (%d명 음소거)", muteCount))
+                .performedBy(ownerId)
+                .build();
+
+        log.info("✅ 전체 음소거 설정 완료 - 방ID: {}, 방장ID: {}, 음소거된 참가자: {}명, 전체 참가자: {}명",
+                roomId, ownerId, muteCount, activeParticipants.size());
+
+        return response;
+    }
+
+    // 전체 음소거 해제 (방장만)
+    @Transactional
+    public MuteAllResponse unmuteAllParticipants(Long roomId, Long ownerId) {
+        log.info("전체 음소거 해제 시작 - 방ID: {}, 방장ID: {}", roomId, ownerId);
+
+        // 방 존재 확인
+        StudyRoom studyRoom = validateStudyRoomExists(roomId);
+
+        // 방장 권한 확인
+        validateOwnerPermission(studyRoom, ownerId);
+
+        // 전체 음소거 상태가 아니어도 처리 계속
+        if (!studyRoom.isAllMuted()) {
+            log.warn("전체 음소거 상태가 아니지만 모든 참가자 음소거 해제 진행 - 방ID: {}", roomId);
+        }
+
+        // 현재 활성화 참가자 조회
+        List<Participant> activeParticipants = getActiveParticipants(roomId);
+
+        if (activeParticipants.isEmpty()) {
+            log.warn("참가자가 없어 전체 음소거 해제 불가 - 방ID: {}", roomId);
+            // 빈 방이라도 전체 음소거 상태는 해제
+            studyRoom.disableAllMute();
+            studyRoomRepository.save(studyRoom);
+
+            return MuteAllResponse.builder()
+                    .roomId(roomId)
+                    .isAllMuted(false)
+                    .totalParticipants(0)
+                    .unmutedParticipants(0)
+                    .message("전체 음소거가 해제되었습니다 (참가자 없음)")
+                    .performedBy(ownerId)
+                    .build();
+        }
+
+        // 모든 참가자 음소거 해제
+        int unmutedCount = 0;
+        for (Participant participant : activeParticipants) {
+            // 이미 음소거 해제된 참가자는 스킵
+            if (participant.isAudioEnabled()) {
+                log.debug("이미 음소거 해제된 참가자 - 사용자ID: {}", participant.getUserId());
+                continue;
+            }
+
+            participant.enableAudio("방장(전체음소거해제)");
+            unmutedCount++;
+            log.debug("참가자 음소거 해제 - 사용자ID: {}", participant.getUserId());
+        }
+
+        // StudyRoom 전체 음소거 상태 해제
+        studyRoom.disableAllMute();
+        studyRoomRepository.save(studyRoom);
+
+        // 응답 생성
+        MuteAllResponse response = MuteAllResponse.builder()
+                .roomId(roomId)
+                .isAllMuted(false)
+                .totalParticipants(activeParticipants.size())
+                .unmutedParticipants(unmutedCount)
+                .message(String.format("전체 음소거가 해제되었습니다 (%d명 해제)", unmutedCount))
+                .performedBy(ownerId)
+                .build();
+
+        log.info("✅ 전체 음소거 해제 완료 - 방ID: {}, 방장ID: {}, 해제된 참가자: {}명, 전체 참가자: {}명",
+                roomId, ownerId, unmutedCount, activeParticipants.size());
+
+        return response;
+    }
+
+    // 전체 음소거 토글
+    @Transactional
+    public MuteAllResponse toggleMuteAll(Long roomId, Long ownerId) {
+        log.info("전체 음소거 토글 - 방ID: {}, 방장ID: {}", roomId, ownerId);
+
+        StudyRoom studyRoom = validateStudyRoomExists(roomId);
+
+        if (studyRoom.isAllMuted()) {
+            log.debug("현재 전체 음소거 상태 → 해제로 토글");
+            return unmuteAllParticipants(roomId, ownerId);
+        } else {
+            log.debug("현재 전체 음소거 아님 → 설정으로 토글");
+            return muteAllParticipants(roomId, ownerId);
+        }
+    }
+
+    private void validateOwnerPermission(StudyRoom studyRoom, Long userId) {
+
+        if (!studyRoom.getUserId().equals(userId)) {
+            log.error("방장 권한 없음 - 방ID: {}, 실제방장: {}, 요청자: {}",
+                    studyRoom.getRoomId(), studyRoom.getUserId(), userId);
+            throw new SecurityException("방장만 전체 음소거를 설정/해제할 수 있습니다");
         }
     }
 }
