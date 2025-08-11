@@ -44,24 +44,38 @@ public class StudyTimeService {
         // 1. 전체 기록 조회 (연속 출석은 전체 범위 필요)
         List<StudyTime> allRecords = studyTimeRepository.findAllByUserId(userId);
 
-        Map<LocalDate, Integer> dailyMinutes = new HashMap<>();
+        // 일자별 초 단위 집계로 변경 (분 손실 방지)
+        Map<LocalDate, Long> dailySeconds = new HashMap<>();
 
         for (StudyTime record : allRecords) {
             LocalDateTime from = record.getCreatedAt();
             LocalDateTime to = record.getDeletedAt();
+            if (to == null) to = LocalDateTime.now(); // 진행 중 세션 처리
 
-            for (LocalDate date = from.toLocalDate(); !date.isAfter(to.toLocalDate()); date = date.plusDays(1)) {
-                LocalDateTime start = date.atStartOfDay();
-                LocalDateTime end = date.atTime(23, 59, 59);
-                LocalDateTime actualStart = from.isBefore(start) ? start : from;
-                LocalDateTime actualEnd = to.isAfter(end) ? end : to;
+            // 방어: 역전 구간 스킵
+            if (!from.isBefore(to)) continue;
 
-                if (!actualStart.isAfter(actualEnd)) {
-                    int minutes = (int) Duration.between(actualStart, actualEnd).toMinutes();
-                    dailyMinutes.merge(date, minutes, Integer::sum);
+            for (LocalDate date = from.toLocalDate();
+                 !date.isAfter(to.toLocalDate());
+                 date = date.plusDays(1)) {
+
+                LocalDateTime dayStart = date.atStartOfDay();
+                LocalDateTime dayEndExclusive = date.plusDays(1).atStartOfDay(); // 00:00 (배타)
+
+                LocalDateTime actualStart = from.isAfter(dayStart) ? from : dayStart;
+                LocalDateTime actualEnd = to.isBefore(dayEndExclusive) ? to : dayEndExclusive;
+
+                if (actualStart.isBefore(actualEnd)) {
+                    long seconds = Duration.between(actualStart, actualEnd).getSeconds();
+                    dailySeconds.merge(date, seconds, Long::sum);
                 }
             }
         }
+
+        Map<LocalDate, Integer> dailyMinutes = new HashMap<>();
+        dailySeconds.forEach((d, sec) -> dailyMinutes.put(d, (int) Math.floorDiv(sec, 60)));      // 버림
+// 또는 반올림: (int) Math.round(sec / 60.0)
+
 
         // 연속 출석 계산 (전체 기록 기준)
         int attendanceStreak = 0;
