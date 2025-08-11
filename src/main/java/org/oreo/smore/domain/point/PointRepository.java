@@ -1,4 +1,6 @@
 package org.oreo.smore.domain.point;
 
-public class PointRepository {
+import org.springframework.data.jpa.repository.JpaRepository;
+
+public interface PointRepository extends JpaRepository<Point, Long> {
 }
