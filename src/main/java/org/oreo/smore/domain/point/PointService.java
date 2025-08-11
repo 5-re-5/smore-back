@@ -2,6 +2,7 @@ package org.oreo.smore.domain.point;
 
 import lombok.RequiredArgsConstructor;
 import org.oreo.smore.domain.point.dto.response.TotalPointsResponse;
+import org.oreo.smore.domain.point.dto.response.OreoDrawResponse;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -13,5 +14,9 @@ public class PointService {
     @Transactional(readOnly = true)
     public TotalPointsResponse getTotalPoints(Long userId) {
         return new TotalPointsResponse(pointRepository.sumDeltaByUserId(userId));
+    }
+
+    public OreoDrawResponse drawOreo(Long userId) {
+        return null;
     }
 }
