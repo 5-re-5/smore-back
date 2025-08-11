@@ -55,15 +55,4 @@ public class PointService {
 
         return new OreoDrawResponse(result, user.getLevel(), updatedPoints);
     }
-
-    @Transactional
-    public void addPoints(Long userId, int delta, String reason) {
-        Point point = Point.builder()
-                .userId(userId)
-                .delta(delta)
-                .reason(reason)
-                .timestamp(LocalDateTime.now())
-                .build();
-        pointRepository.save(point);
-    }
 }
