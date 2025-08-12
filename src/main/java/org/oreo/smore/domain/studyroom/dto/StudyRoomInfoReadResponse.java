@@ -78,7 +78,7 @@ public class StudyRoomInfoReadResponse implements Identifiable {
                 e.getMaxParticipants(),
                 currentParticipants,
                 created,
-                e.getFocusTime() == null,
+                !(e.getFocusTime() == null),
                 !(e.getPassword() == null || e.getPassword().isEmpty()),
                 new CreatorDto(creatorNickname)
         );
