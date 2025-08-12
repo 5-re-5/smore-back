@@ -1,12 +1,10 @@
 package org.oreo.smore.domain.studyroom.dto;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
 import org.oreo.smore.domain.studyroom.StudyRoomCategory;
 import org.springframework.web.multipart.MultipartFile;
 
+@Data
 @Getter
 @Builder
 @NoArgsConstructor
