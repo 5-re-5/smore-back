@@ -47,7 +47,6 @@ public class ChatMessageDTO {
         @NotNull
         private Long roomId;
 
-        @NotNull
         private Long userId;
 
         @NotBlank
@@ -62,12 +61,6 @@ public class ChatMessageDTO {
         // 사용자 정보
         private UserInfo user;
 
-        // 메시지 상태
-        @Builder.Default
-        private Boolean isEdited = false;
-
-        @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
-        private LocalDateTime editedAt;
     }
 
     @Data
@@ -87,6 +80,8 @@ public class ChatMessageDTO {
     @Builder
     public static class Broadcast {
 
+        private Long messageId;
+
         private Long roomId;
         private Long userId;
         private String nickname;
@@ -101,5 +96,28 @@ public class ChatMessageDTO {
         private String broadcastType = "NEW_MESSAGE";
 
         private Object metadata;
+    }
+
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @Builder
+    public static class PageCursor {
+        private Long lastMessageId;
+
+        @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+        private LocalDateTime lastCreatedAt;
+    }
+
+    // 페이지네이션 응답 DTO
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @Builder
+    public static class PageResponse {
+        private java.util.List<Response> content;
+        private boolean hasNext;
+        private PageCursor nextCursor;
+        private int size;
     }
 }

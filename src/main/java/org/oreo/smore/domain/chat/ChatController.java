@@ -13,6 +13,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.validation.annotation.Validated;
 
 import java.time.LocalDateTime;
+import java.util.Map;
 
 @Controller
 @RequiredArgsConstructor
@@ -21,7 +22,7 @@ import java.time.LocalDateTime;
 public class ChatController {
 
     private final SimpMessagingTemplate messagingTemplate;
-
+    private final ChatService chatService;
     // 채팅 메시지 전송
     @MessageMapping("/chat/send")
     public void sendMessage(@Valid @Payload ChatMessageDTO.Request request,
@@ -37,19 +38,20 @@ public class ChatController {
             }
 
             // 메시지 타입 설정 (기본값: CHAT)
-            MessageType messageType = request.getMessageType() != null ?
-                    request.getMessageType() : MessageType.CHAT;
+            ChatMessageDTO.Response savedMessage = chatService.saveMessage(request, user);
+            log.info("메시지 DB 저장 완료 - 메시지 ID: {}", savedMessage.getMessageId());
 
             // 브로드캐스트용 메시지 생성
             ChatMessageDTO.Broadcast broadcastMessage = ChatMessageDTO.Broadcast.builder()
-                    .roomId(request.getRoomId())
-                    .userId(user.getUserId())
-                    .nickname(user.getNickname())
-                    .content(request.getContent())
-                    .messageType(messageType)
-                    .timestamp(LocalDateTime.now())
+                    .messageId(savedMessage.getMessageId())
+                    .roomId(savedMessage.getRoomId())
+                    .userId(savedMessage.getUserId())
+                    .nickname(savedMessage.getUser() != null ? savedMessage.getUser().getNickname() : null)
+                    .content(savedMessage.getContent())
+                    .messageType(savedMessage.getMessageType())
+                    .timestamp(savedMessage.getCreatedAt())
                     .broadcastType("NEW_MESSAGE")
-                    .metadata(createMessageMetadata(user, request))
+                    .metadata(createMessageMetadata(savedMessage))
                     .build();
 
             // 모든 클라이언트에게 브로드캐스트
@@ -66,7 +68,7 @@ public class ChatController {
             if (userEmail != null) {
                 ChatMessageDTO.Broadcast errorMessage = ChatMessageDTO.Broadcast.builder()
                         .roomId(request.getRoomId())
-                        .content("메시지 전송 중 오류가 발생했습니다.")
+                        .content("메시지 전송 중 오류가 발생했습니다: " + e.getMessage())
                         .messageType(MessageType.SYSTEM)
                         .timestamp(LocalDateTime.now())
                         .broadcastType("ERROR")
@@ -91,13 +93,23 @@ public class ChatController {
             log.info("🚪 사용자 입장 - 사용자: {}, 룸ID: {}", user.getNickname(), request.getRoomId());
 
             // 입장 알림 메시지
-            ChatMessageDTO.Broadcast joinMessage = ChatMessageDTO.Broadcast.builder()
+            ChatMessageDTO.Request joinRequest = ChatMessageDTO.Request.builder()
                     .roomId(request.getRoomId())
-                    .userId(user.getUserId())
-                    .nickname(user.getNickname())
                     .content(user.getNickname() + "님이 입장하셨습니다.")
                     .messageType(MessageType.USER_JOIN)
-                    .timestamp(LocalDateTime.now())
+                    .build();
+
+            ChatMessageDTO.Response savedJoinMessage = chatService.saveMessage(joinRequest, user);
+
+            // 입장 알림 브로드캐스트
+            ChatMessageDTO.Broadcast joinMessage = ChatMessageDTO.Broadcast.builder()
+                    .messageId(savedJoinMessage.getMessageId())
+                    .roomId(savedJoinMessage.getRoomId())
+                    .userId(savedJoinMessage.getUserId())
+                    .nickname(user.getNickname())
+                    .content(savedJoinMessage.getContent())
+                    .messageType(MessageType.USER_JOIN)
+                    .timestamp(savedJoinMessage.getCreatedAt())
                     .broadcastType("USER_JOIN")
                     .build();
 
@@ -123,14 +135,24 @@ public class ChatController {
 
             log.info("🚪 사용자 퇴장 - 사용자: {}, 룸ID: {}", user.getNickname(), request.getRoomId());
 
-            // 퇴장 알림 메시지
-            ChatMessageDTO.Broadcast leaveMessage = ChatMessageDTO.Broadcast.builder()
+            // ✅ 시스템 메시지로 퇴장 알림 저장
+            ChatMessageDTO.Request leaveRequest = ChatMessageDTO.Request.builder()
                     .roomId(request.getRoomId())
-                    .userId(user.getUserId())
-                    .nickname(user.getNickname())
                     .content(user.getNickname() + "님이 퇴장하셨습니다.")
                     .messageType(MessageType.USER_LEAVE)
-                    .timestamp(LocalDateTime.now())
+                    .build();
+
+            ChatMessageDTO.Response savedLeaveMessage = chatService.saveMessage(leaveRequest, user);
+
+            // 퇴장 알림 브로드캐스트
+            ChatMessageDTO.Broadcast leaveMessage = ChatMessageDTO.Broadcast.builder()
+                    .messageId(savedLeaveMessage.getMessageId())
+                    .roomId(savedLeaveMessage.getRoomId())
+                    .userId(savedLeaveMessage.getUserId())
+                    .nickname(user.getNickname())
+                    .content(savedLeaveMessage.getContent())
+                    .messageType(MessageType.USER_LEAVE)
+                    .timestamp(savedLeaveMessage.getCreatedAt())
                     .broadcastType("USER_LEAVE")
                     .build();
 
@@ -143,12 +165,11 @@ public class ChatController {
         }
     }
 
-    private Object createMessageMetadata(User user, ChatMessageDTO.Request request) {
-        return ChatMessageDTO.UserInfo.builder()
-                .userId(user.getUserId())
-                .nickname(user.getNickname())
-                .email(user.getEmail())
-                .profileUrl(user.getProfileUrl())
-                .build();
+    private Object createMessageMetadata(ChatMessageDTO.Response savedMessage) {
+        return Map.of(
+                "messageId", savedMessage.getMessageId(),
+                "user", savedMessage.getUser(),
+                "savedAt", savedMessage.getCreatedAt()
+        );
     }
 }

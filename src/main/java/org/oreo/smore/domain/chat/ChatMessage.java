@@ -44,7 +44,7 @@ public class ChatMessage {
 
     // 메시지 작성자
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false)
+    @JoinColumn(name = "user_id", nullable = true)
     private User user;
 
     @Column(name = "content", length = 500, nullable = false)
@@ -63,27 +63,12 @@ public class ChatMessage {
     @Column(name = "deleted_at")
     private LocalDateTime deletedAt;
 
-    // 수정된 메시지 여부
-    @Column(name = "is_edited", nullable = false)
-    private Boolean isEdited = false;
-
-    // 원본 메시지 ID 수정된 경우
-    @Column(name = "original_message_id")
-    private Long originalMessageId;
-
     @Builder
     public ChatMessage(Long roomId, User user, String content, MessageType messageType) {
         this.roomId = roomId;
         this.user = user;
         this.content = content;
         this.messageType = messageType;
-        this.isEdited = false;
-    }
-
-    // 메시지 수정
-    public void editMessage(String newContent) {
-        this.content = newContent;
-        this.isEdited = true;
     }
 
     public void softDelete() {

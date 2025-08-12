@@ -454,4 +454,76 @@ class ChatControllerTest {
             exception.printStackTrace();
         }
     }
+
+    @Test
+    @DisplayName("5. 빈 메시지 전송 시 유효성 실패(브로드캐스트 미발생)")
+    void testSendEmptyMessage_ValidationError() throws Exception {
+        // Given
+        String url = "ws://localhost:" + port + "/ws/chat";
+        String validJwt = jwtTokenProvider.createAccessToken(testUser.getUserId().toString());
+
+        WebSocketHttpHeaders headers = new WebSocketHttpHeaders();
+        headers.add("Cookie", "accessToken=" + validJwt);
+
+        // 기존 테스트들과 동일한 방식 (핸드셰이크 헤더만 사용)
+        StompSession session = stompClient
+                .connectAsync(url, headers, new TestStompSessionHandler())
+                .get(10, TimeUnit.SECONDS);
+
+        // 브로드캐스트 구독 (방 구분이 없다면 프로젝트 기본 토픽 사용)
+        BlockingQueue<ChatMessageDTO.Broadcast> queue = new LinkedBlockingQueue<>();
+        session.subscribe("/topic/chat/broadcast", new StompFrameHandler() {
+            @Override public Type getPayloadType(StompHeaders headers) { return ChatMessageDTO.Broadcast.class; }
+            @Override public void handleFrame(StompHeaders headers, Object payload) {
+                queue.offer((ChatMessageDTO.Broadcast) payload);
+            }
+        });
+
+        // When: 빈 content 전송
+        ChatMessageDTO.Request bad = ChatMessageDTO.Request.builder()
+                .roomId(1L)
+                .content("") // @NotBlank 없으면 이 테스트는 실패할 수 있음
+                .messageType(MessageType.CHAT)
+                .build();
+        session.send("/app/chat/send", bad);
+
+        // Then: 브로드캐스트가 오면 안 됨(유효성 실패 가정)
+        ChatMessageDTO.Broadcast received = queue.poll(2, TimeUnit.SECONDS);
+        assertNull(received, "빈 메시지는 브로드캐스트 되면 안 됩니다.");
+
+        session.disconnect();
+        System.out.println("✅ 빈 메시지 전송 유효성/에러 처리 테스트 통과");
+    }
+
+    @Test
+    @DisplayName("6. 구독 없이 send만 해도 서버 예외 없이 연결 유지된다")
+    void testSendWithoutSubscription_NoServerError() throws Exception {
+        // Given
+        String url = "ws://localhost:" + port + "/ws/chat";
+        String validJwt = jwtTokenProvider.createAccessToken(testUser.getUserId().toString());
+
+        WebSocketHttpHeaders headers = new WebSocketHttpHeaders();
+        headers.add("Cookie", "accessToken=" + validJwt);
+
+        StompSession session = stompClient
+                .connectAsync(url, headers, new TestStompSessionHandler())
+                .get(10, TimeUnit.SECONDS);
+
+        // When: 구독 없이 전송
+        ChatMessageDTO.Request req = ChatMessageDTO.Request.builder()
+                .roomId(1L)
+                .content("구독 없이 보내는 메시지")
+                .messageType(MessageType.CHAT)
+                .build();
+        session.send("/app/chat/send", req);
+
+        // Then: 서버 예외로 끊기지 않아야 함
+        Thread.sleep(1000);
+        assertTrue(session.isConnected(), "구독이 없어도 서버 예외로 끊기면 안 됩니다.");
+
+        session.disconnect();
+        System.out.println("✅ 구독 없이 send 시 서버 예외 없음 테스트 통과");
+    }
+
+
 }
