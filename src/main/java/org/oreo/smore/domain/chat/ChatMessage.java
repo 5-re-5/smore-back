@@ -67,6 +67,7 @@ public class ChatMessage {
     @Column(name = "is_edited", nullable = false)
     private Boolean isEdited = false;
 
+    // 원본 메시지 ID 수정된 경우
     @Column(name = "original_message_id")
     private Long originalMessageId;
 

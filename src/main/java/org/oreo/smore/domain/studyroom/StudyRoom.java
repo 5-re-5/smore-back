@@ -137,6 +137,7 @@ public class StudyRoom {
         this.inviteHashCode = inviteHashCode;
         this.liveKitRoomId = liveKitRoomId;
         this.isAllMuted = isAllMuted != null ? isAllMuted : false;
+        this.initializeChatRoom();
     }
 
     // chatroom 관련 메서드
@@ -150,5 +151,14 @@ public class StudyRoom {
 
     public boolean isChatRoomActive() {
         return this.chatRoom != null && this.chatRoom.getIsActive();
+    }
+
+
+    private void initializeChatRoom() {
+        if (this.chatRoom == null) {
+            this.chatRoom = ChatRoom.builder()
+                    .studyRoom(this)
+                    .build();
+        }
     }
 }
