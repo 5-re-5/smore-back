@@ -100,7 +100,6 @@ public class ChatMessageDTO {
         @Builder.Default
         private String broadcastType = "NEW_MESSAGE";
 
-        // 추가 메타데이터
         private Object metadata;
     }
 }
