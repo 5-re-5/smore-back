@@ -59,9 +59,6 @@ public class FocusRecordService {
         List<FocusRecord> records =
                 focusRecordRepository.findByUserIdAndTimestampAfter(userId, oneMonthAgo);
 
-        if (records.isEmpty()) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND);
-        }
         return records;
     }
 
