@@ -66,7 +66,8 @@ class CreateStudyRoomRequestTest {
                 "테스트태그",
                 StudyRoomCategory.CERTIFICATION,
                 40,
-                10
+                10,
+                null
         );
 
         // then

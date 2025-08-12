@@ -74,7 +74,7 @@ public class StudyRoomInfoReadResponse implements Identifiable {
                 e.getDescription(),
                 e.getThumbnailUrl(),
                 tags,
-                e.getCategory().name(),         // enum → String
+                e.getCategory().getValue(),         // enum → String
                 e.getMaxParticipants(),
                 currentParticipants,
                 created,
