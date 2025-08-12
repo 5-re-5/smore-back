@@ -42,6 +42,10 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
                 .setAllowedOriginPatterns("*") // 개발 환경용, 프로덕션에서는 도메인 지정
                 .withSockJS(); // SockJS 폴백 지원
 
+        registry.addEndpoint("/ws/chat")
+                .setAllowedOriginPatterns("*")
+                .addInterceptors(chatHandshakeInterceptor);
+
         log.info("✅ WebSocket 엔드포인트 등록 완료: /ws/chat");
     }
 
