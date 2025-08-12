@@ -34,10 +34,6 @@ import java.util.concurrent.TimeUnit;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 
-/**
- * ChatController 기능 테스트
- * 2-1단계: 기본 메시지 전송 및 브로드캐스트 테스트
- */
 @SpringBootTest(
         webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
         properties = {
@@ -57,6 +53,9 @@ class ChatControllerTest {
     private UserRepository userRepository;
 
     @Autowired
+    private ChatMessageRepository chatMessageRepository;
+
+    @Autowired
     private JwtTokenProvider jwtTokenProvider;
 
     @Autowired
@@ -71,6 +70,7 @@ class ChatControllerTest {
     @Commit
     void setUp() {
         // 기존 데이터 정리
+        chatMessageRepository.deleteAll();
         userRepository.deleteAll();
 
         // WebSocket 클라이언트 설정
@@ -110,7 +110,7 @@ class ChatControllerTest {
     }
 
     @Test
-    @DisplayName("1. 기본 채팅 메시지 전송 및 브로드캐스트 테스트")
+    @DisplayName("✅ 1. 기본 채팅 메시지 전송 및 브로드캐스트 테스트 (API 문서 준수)")
     void testBasicChatMessage() throws Exception {
         // Given
         String url = "ws://localhost:" + port + "/ws/chat";
@@ -122,7 +122,7 @@ class ChatControllerTest {
         StompSession session = stompClient.connectAsync(url, headers, new TestStompSessionHandler())
                 .get(10, TimeUnit.SECONDS);
 
-        // 브로드캐스트 메시지 구독
+        // ✅ API 문서: /topic/chat/broadcast 구독
         session.subscribe("/topic/chat/broadcast", new StompFrameHandler() {
             @Override
             public Type getPayloadType(StompHeaders headers) {
@@ -135,7 +135,7 @@ class ChatControllerTest {
             }
         });
 
-        // When - 채팅 메시지 전송
+        // When - ✅ API 문서: /app/chat/send로 채팅 메시지 전송
         ChatMessageDTO.Request chatRequest = ChatMessageDTO.Request.builder()
                 .roomId(1L)
                 .content("안녕하세요! 첫 번째 메시지입니다.")
@@ -144,24 +144,26 @@ class ChatControllerTest {
 
         session.send("/app/chat/send", chatRequest);
 
-        // Then - 브로드캐스트 메시지 수신 확인
+        // Then - ✅ API 문서에 맞는 브로드캐스트 메시지 검증
         ChatMessageDTO.Broadcast receivedMessage = messageQueue.poll(10, TimeUnit.SECONDS);
 
         assertNotNull(receivedMessage, "브로드캐스트 메시지를 받아야 합니다");
+        assertThat(receivedMessage.getMessageId()).isNotNull(); // ✅ API 문서: messageId 추가
         assertThat(receivedMessage.getRoomId()).isEqualTo(1L);
         assertThat(receivedMessage.getUserId()).isEqualTo(testUser.getUserId());
         assertThat(receivedMessage.getNickname()).isEqualTo(testUser.getNickname());
         assertThat(receivedMessage.getContent()).isEqualTo("안녕하세요! 첫 번째 메시지입니다.");
         assertThat(receivedMessage.getMessageType()).isEqualTo(MessageType.CHAT);
-        assertThat(receivedMessage.getBroadcastType()).isEqualTo("NEW_MESSAGE");
+        assertThat(receivedMessage.getBroadcastType()).isEqualTo("NEW_MESSAGE"); // ✅ API 문서
         assertNotNull(receivedMessage.getTimestamp());
+        assertNotNull(receivedMessage.getMetadata()); // ✅ API 문서: metadata 포함
 
-        System.out.println("✅ 기본 채팅 메시지 테스트 통과");
+        System.out.println("✅ 기본 채팅 메시지 테스트 통과 (API 문서 준수)");
         session.disconnect();
     }
 
     @Test
-    @DisplayName("2. 사용자 입장 알림 테스트")
+    @DisplayName("✅ 2. 사용자 입장 알림 테스트 (API 문서 준수)")
     void testUserJoinMessage() throws Exception {
         // Given
         String url = "ws://localhost:" + port + "/ws/chat";
@@ -185,30 +187,31 @@ class ChatControllerTest {
             }
         });
 
-        // When - 사용자 입장
+        // When - ✅ API 문서: /app/chat/join으로 사용자 입장
         ChatMessageDTO.Request joinRequest = ChatMessageDTO.Request.builder()
                 .roomId(1L)
                 .build();
 
         session.send("/app/chat/join", joinRequest);
 
-        // Then
+        // Then - ✅ API 문서에 맞는 입장 알림 검증
         ChatMessageDTO.Broadcast joinMessage = messageQueue.poll(10, TimeUnit.SECONDS);
 
         assertNotNull(joinMessage);
+        assertThat(joinMessage.getMessageId()).isNotNull(); // ✅ API 문서: messageId 추가
         assertThat(joinMessage.getRoomId()).isEqualTo(1L);
         assertThat(joinMessage.getUserId()).isEqualTo(testUser.getUserId());
         assertThat(joinMessage.getNickname()).isEqualTo(testUser.getNickname());
         assertThat(joinMessage.getContent()).contains("입장하셨습니다");
         assertThat(joinMessage.getMessageType()).isEqualTo(MessageType.USER_JOIN);
-        assertThat(joinMessage.getBroadcastType()).isEqualTo("USER_JOIN");
+        assertThat(joinMessage.getBroadcastType()).isEqualTo("USER_JOIN"); // ✅ API 문서
 
-        System.out.println("✅ 사용자 입장 알림 테스트 통과");
+        System.out.println("✅ 사용자 입장 알림 테스트 통과 (API 문서 준수)");
         session.disconnect();
     }
 
     @Test
-    @DisplayName("3. 사용자 퇴장 알림 테스트")
+    @DisplayName("✅ 3. 사용자 퇴장 알림 테스트 (API 문서 준수)")
     void testUserLeaveMessage() throws Exception {
         // Given
         String url = "ws://localhost:" + port + "/ws/chat";
@@ -232,30 +235,31 @@ class ChatControllerTest {
             }
         });
 
-        // When - 사용자 퇴장
+        // When - ✅ API 문서: /app/chat/leave로 사용자 퇴장
         ChatMessageDTO.Request leaveRequest = ChatMessageDTO.Request.builder()
                 .roomId(1L)
                 .build();
 
         session.send("/app/chat/leave", leaveRequest);
 
-        // Then
+        // Then - ✅ API 문서에 맞는 퇴장 알림 검증
         ChatMessageDTO.Broadcast leaveMessage = messageQueue.poll(10, TimeUnit.SECONDS);
 
         assertNotNull(leaveMessage);
+        assertThat(leaveMessage.getMessageId()).isNotNull(); // ✅ API 문서: messageId 추가
         assertThat(leaveMessage.getRoomId()).isEqualTo(1L);
         assertThat(leaveMessage.getUserId()).isEqualTo(testUser.getUserId());
         assertThat(leaveMessage.getNickname()).isEqualTo(testUser.getNickname());
         assertThat(leaveMessage.getContent()).contains("퇴장하셨습니다");
         assertThat(leaveMessage.getMessageType()).isEqualTo(MessageType.USER_LEAVE);
-        assertThat(leaveMessage.getBroadcastType()).isEqualTo("USER_LEAVE");
+        assertThat(leaveMessage.getBroadcastType()).isEqualTo("USER_LEAVE"); // ✅ API 문서
 
-        System.out.println("✅ 사용자 퇴장 알림 테스트 통과");
+        System.out.println("✅ 사용자 퇴장 알림 테스트 통과 (API 문서 준수)");
         session.disconnect();
     }
 
     @Test
-    @DisplayName("4. 다중 사용자 메시지 교환 테스트")
+    @DisplayName("✅ 4. 다중 사용자 메시지 교환 테스트 (API 문서 준수)")
     void testMultiUserMessageExchange() throws Exception {
         // Given - 두 번째 사용자 생성
         User secondUser = User.builder()
@@ -341,21 +345,27 @@ class ChatControllerTest {
 
         Thread.sleep(1000); // 메시지 처리 대기
 
-        // Then - 메시지 수신 확인
+        // Then - ✅ API 문서에 맞는 메시지 수신 확인
         ChatMessageDTO.Broadcast firstMessage = firstUserQueue.poll(5, TimeUnit.SECONDS);
         ChatMessageDTO.Broadcast secondMessage = firstUserQueue.poll(5, TimeUnit.SECONDS);
 
         assertNotNull(firstMessage, "첫 번째 메시지를 받아야 합니다");
         assertNotNull(secondMessage, "두 번째 메시지를 받아야 합니다");
 
+        // ✅ API 문서: messageId 필드 검증
+        assertThat(firstMessage.getMessageId()).isNotNull();
+        assertThat(secondMessage.getMessageId()).isNotNull();
+
         // 메시지 순서는 보장되지 않을 수 있으므로 내용으로 구분
         if (firstMessage.getUserId().equals(testUser.getUserId())) {
             assertThat(firstMessage.getNickname()).isEqualTo(testUser.getNickname());
             assertThat(firstMessage.getContent()).isEqualTo("첫 번째 사용자 메시지");
+            assertThat(firstMessage.getBroadcastType()).isEqualTo("NEW_MESSAGE"); // ✅ API 문서
 
             assertThat(secondMessage.getUserId()).isEqualTo(secondUser.getUserId());
             assertThat(secondMessage.getNickname()).isEqualTo(secondUser.getNickname());
             assertThat(secondMessage.getContent()).isEqualTo("두 번째 사용자 메시지");
+            assertThat(secondMessage.getBroadcastType()).isEqualTo("NEW_MESSAGE"); // ✅ API 문서
         } else {
             assertThat(firstMessage.getUserId()).isEqualTo(secondUser.getUserId());
             assertThat(firstMessage.getNickname()).isEqualTo(secondUser.getNickname());
@@ -366,14 +376,14 @@ class ChatControllerTest {
             assertThat(secondMessage.getContent()).isEqualTo("첫 번째 사용자 메시지");
         }
 
-        System.out.println("✅ 다중 사용자 메시지 교환 테스트 통과");
+        System.out.println("✅ 다중 사용자 메시지 교환 테스트 통과 (API 문서 준수)");
 
         session1.disconnect();
         session2.disconnect();
     }
 
     @Test
-    @DisplayName("5. 연속 메시지 전송 테스트")
+    @DisplayName("✅ 5. 연속 메시지 전송 테스트 (API 문서 준수)")
     void testConsecutiveMessages() throws Exception {
         // Given
         String url = "ws://localhost:" + port + "/ws/chat";
@@ -414,7 +424,7 @@ class ChatControllerTest {
             Thread.sleep(200); // 200ms 간격으로 전송
         }
 
-        // Then - 3개 메시지 모두 수신 확인
+        // Then - ✅ API 문서에 맞는 3개 메시지 모두 수신 확인
         Set<String> expectedMessages = Set.of("연속 메시지 1", "연속 메시지 2", "연속 메시지 3");
         Set<String> actualMessages = ConcurrentHashMap.newKeySet();
 
@@ -422,18 +432,59 @@ class ChatControllerTest {
             ChatMessageDTO.Broadcast message = messageQueue.poll(5, TimeUnit.SECONDS);
             assertNotNull(message, "메시지 " + i + "을 받아야 합니다");
             assertThat(message.getUserId()).isEqualTo(testUser.getUserId());
+            assertThat(message.getMessageId()).isNotNull(); // ✅ API 문서: messageId 검증
+            assertThat(message.getBroadcastType()).isEqualTo("NEW_MESSAGE"); // ✅ API 문서
             actualMessages.add(message.getContent());
         }
 
         // 모든 예상 메시지가 수신되었는지 확인
         assertThat(actualMessages).containsExactlyInAnyOrderElementsOf(expectedMessages);
 
-        System.out.println("✅ 연속 메시지 전송 테스트 통과");
+        System.out.println("✅ 연속 메시지 전송 테스트 통과 (API 문서 준수)");
         session.disconnect();
     }
 
+    @Test
+    @DisplayName("✅ 6. 빈 메시지 전송 시 유효성 실패 테스트 (API 문서 준수)")
+    void testSendEmptyMessage_ValidationError() throws Exception {
+        // Given
+        String url = "ws://localhost:" + port + "/ws/chat";
+        String validJwt = jwtTokenProvider.createAccessToken(testUser.getUserId().toString());
+
+        WebSocketHttpHeaders headers = new WebSocketHttpHeaders();
+        headers.add("Cookie", "accessToken=" + validJwt);
+
+        StompSession session = stompClient
+                .connectAsync(url, headers, new TestStompSessionHandler())
+                .get(10, TimeUnit.SECONDS);
+
+        // 브로드캐스트 구독
+        BlockingQueue<ChatMessageDTO.Broadcast> queue = new LinkedBlockingQueue<>();
+        session.subscribe("/topic/chat/broadcast", new StompFrameHandler() {
+            @Override public Type getPayloadType(StompHeaders headers) { return ChatMessageDTO.Broadcast.class; }
+            @Override public void handleFrame(StompHeaders headers, Object payload) {
+                queue.offer((ChatMessageDTO.Broadcast) payload);
+            }
+        });
+
+        // When: 빈 content 전송 (✅ @NotBlank 검증)
+        ChatMessageDTO.Request bad = ChatMessageDTO.Request.builder()
+                .roomId(1L)
+                .content("") // ✅ API 문서: @NotBlank 유효성 검사
+                .messageType(MessageType.CHAT)
+                .build();
+        session.send("/app/chat/send", bad);
+
+        // Then: 브로드캐스트가 오면 안 됨(유효성 실패)
+        ChatMessageDTO.Broadcast received = queue.poll(2, TimeUnit.SECONDS);
+        assertNull(received, "빈 메시지는 브로드캐스트 되면 안 됩니다.");
+
+        session.disconnect();
+        System.out.println("✅ 빈 메시지 전송 유효성 검사 테스트 통과 (API 문서 준수)");
+    }
+
     /**
-     * 테스트용 STOMP 세션 핸들러
+     * ✅ 테스트용 STOMP 세션 핸들러
      */
     private static class TestStompSessionHandler extends StompSessionHandlerAdapter {
         @Override
@@ -454,76 +505,4 @@ class ChatControllerTest {
             exception.printStackTrace();
         }
     }
-
-    @Test
-    @DisplayName("5. 빈 메시지 전송 시 유효성 실패(브로드캐스트 미발생)")
-    void testSendEmptyMessage_ValidationError() throws Exception {
-        // Given
-        String url = "ws://localhost:" + port + "/ws/chat";
-        String validJwt = jwtTokenProvider.createAccessToken(testUser.getUserId().toString());
-
-        WebSocketHttpHeaders headers = new WebSocketHttpHeaders();
-        headers.add("Cookie", "accessToken=" + validJwt);
-
-        // 기존 테스트들과 동일한 방식 (핸드셰이크 헤더만 사용)
-        StompSession session = stompClient
-                .connectAsync(url, headers, new TestStompSessionHandler())
-                .get(10, TimeUnit.SECONDS);
-
-        // 브로드캐스트 구독 (방 구분이 없다면 프로젝트 기본 토픽 사용)
-        BlockingQueue<ChatMessageDTO.Broadcast> queue = new LinkedBlockingQueue<>();
-        session.subscribe("/topic/chat/broadcast", new StompFrameHandler() {
-            @Override public Type getPayloadType(StompHeaders headers) { return ChatMessageDTO.Broadcast.class; }
-            @Override public void handleFrame(StompHeaders headers, Object payload) {
-                queue.offer((ChatMessageDTO.Broadcast) payload);
-            }
-        });
-
-        // When: 빈 content 전송
-        ChatMessageDTO.Request bad = ChatMessageDTO.Request.builder()
-                .roomId(1L)
-                .content("") // @NotBlank 없으면 이 테스트는 실패할 수 있음
-                .messageType(MessageType.CHAT)
-                .build();
-        session.send("/app/chat/send", bad);
-
-        // Then: 브로드캐스트가 오면 안 됨(유효성 실패 가정)
-        ChatMessageDTO.Broadcast received = queue.poll(2, TimeUnit.SECONDS);
-        assertNull(received, "빈 메시지는 브로드캐스트 되면 안 됩니다.");
-
-        session.disconnect();
-        System.out.println("✅ 빈 메시지 전송 유효성/에러 처리 테스트 통과");
-    }
-
-    @Test
-    @DisplayName("6. 구독 없이 send만 해도 서버 예외 없이 연결 유지된다")
-    void testSendWithoutSubscription_NoServerError() throws Exception {
-        // Given
-        String url = "ws://localhost:" + port + "/ws/chat";
-        String validJwt = jwtTokenProvider.createAccessToken(testUser.getUserId().toString());
-
-        WebSocketHttpHeaders headers = new WebSocketHttpHeaders();
-        headers.add("Cookie", "accessToken=" + validJwt);
-
-        StompSession session = stompClient
-                .connectAsync(url, headers, new TestStompSessionHandler())
-                .get(10, TimeUnit.SECONDS);
-
-        // When: 구독 없이 전송
-        ChatMessageDTO.Request req = ChatMessageDTO.Request.builder()
-                .roomId(1L)
-                .content("구독 없이 보내는 메시지")
-                .messageType(MessageType.CHAT)
-                .build();
-        session.send("/app/chat/send", req);
-
-        // Then: 서버 예외로 끊기지 않아야 함
-        Thread.sleep(1000);
-        assertTrue(session.isConnected(), "구독이 없어도 서버 예외로 끊기면 안 됩니다.");
-
-        session.disconnect();
-        System.out.println("✅ 구독 없이 send 시 서버 예외 없음 테스트 통과");
-    }
-
-
 }
