@@ -22,6 +22,6 @@ public class RecentStudyRoomsResponse {
         private Boolean password;
         private String tag;
         private String thumbnailUrl;
-        private Boolean isDeleted;
+        private Boolean isDelete;
     }
 }
