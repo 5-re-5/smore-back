@@ -11,7 +11,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 @RestController
-@RequestMapping("/v1/study-rooms/{roomId}/chat")
+@RequestMapping("/v1/study-rooms")
 @RequiredArgsConstructor
 @Slf4j
 public class ChatRestController {
@@ -19,7 +19,7 @@ public class ChatRestController {
     private final ChatService chatService;
 
     // 키셋 페이지네이션으로 채팅방 메시지 조회
-    @GetMapping("/rooms/{roomId}/messages")
+    @GetMapping("/{roomId}/messages")
     public ChatMessageDTO.PageResponse getMessages(
             @PathVariable Long roomId,
             @RequestParam(defaultValue = "20") int size,
