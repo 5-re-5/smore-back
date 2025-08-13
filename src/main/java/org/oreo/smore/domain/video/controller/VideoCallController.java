@@ -16,6 +16,7 @@ import org.oreo.smore.domain.studyroom.StudyRoomService;
 import org.oreo.smore.domain.video.dto.JoinRoomRequest;
 import org.oreo.smore.domain.video.dto.TokenRequest;
 import org.oreo.smore.domain.video.dto.TokenResponse;
+import org.oreo.smore.domain.video.exception.StudyRoomNotFoundException;
 import org.oreo.smore.domain.video.service.LiveKitTokenService;
 import org.oreo.smore.domain.video.service.UserIdentityService;
 import org.oreo.smore.domain.video.validator.StudyRoomValidator;
@@ -209,26 +210,45 @@ public class VideoCallController {
 
             StudyRoom validatedRoom;
             try {
+                validatedRoom = studyRoomValidator.validateRejoinAccess(roomId, userId);
+                log.info("✅ REJOIN - 3단계: 접근 권한 검증 성공 - 방ID: {}, 사용자ID: {}", roomId, userId);
+
+            } catch (StudyRoomNotFoundException e) {
+                log.error("❌ REJOIN - validateRejoinAccess에서 방을 찾을 수 없음 - 방ID: {}, 사용자ID: {}", roomId, userId);
+
+                // 방이 여전히 존재하는지 재확인
+                StudyRoom reCheckRoom = studyRoomRepository.findById(roomId).orElse(null);
+                if (reCheckRoom == null) {
+                    log.error("❌ REJOIN - 방이 실제로 삭제됨 - 방ID: {}, 사용자ID: {}", roomId, userId);
+                    throw new RoomNotFoundException(roomId);
+                }
+
+                // 방이 존재하는데 validateRejoinAccess가 실패하는 경우 - 방장이면 통과
                 if (isOwner) {
-                    log.info("🔍 REJOIN - 방장 권한 검증 시작 - 방ID: {}, 방장ID: {}", roomId, userId);
-                    validatedRoom = studyRoomValidator.validateRejoinAccess(roomId, userId);
-                    log.info("✅ REJOIN - 방장 권한 검증 성공 - 방ID: {}, 방장ID: {}", roomId, userId);
+                    log.warn("⚠️ REJOIN - 방장 권한 검증 실패했지만 방장이므로 통과 - 방ID: {}, 방장ID: {}", roomId, userId);
+                    validatedRoom = reCheckRoom;
                 } else {
-                    log.info("🔍 REJOIN - 일반 참가자 권한 검증 시작 - 방ID: {}, 사용자ID: {}", roomId, userId);
-                    validatedRoom = studyRoomValidator.validateRejoinAccess(roomId, userId);
-                    log.info("✅ REJOIN - 일반 참가자 권한 검증 성공 - 방ID: {}, 사용자ID: {}", roomId, userId);
+                    log.error("❌ REJOIN - 일반 참가자 권한 검증 실패 - 방ID: {}, 사용자ID: {}", roomId, userId);
+                    throw new SecurityException("접근 권한이 없습니다");
                 }
+
             } catch (Exception e) {
-                log.error("❌ REJOIN - 3단계: 접근 권한 검증 실패 - 방ID: {}, 사용자ID: {}, 방장여부: {}, 예외: {}, 메시지: {}",
-                        roomId, userId, isOwner, e.getClass().getSimpleName(), e.getMessage());
-                log.error("❌ REJOIN - 접근 권한 검증 실패 스택트레이스:", e);
+                log.error("❌ REJOIN - 권한 검증 중 예상치 못한 오류 - 방ID: {}, 사용자ID: {}, 예외: {}, 메시지: {}",
+                        roomId, userId, e.getClass().getSimpleName(), e.getMessage());
+                log.error("❌ REJOIN - 권한 검증 실패 스택트레이스:", e);
 
-                // 방장의 경우 더 자세한 로그
+                // 방장의 경우 더 관대한 처리
                 if (isOwner) {
-                    log.error("❌ REJOIN - 방장 권한 검증 실패 상세 - 방ID: {}, 방장ID: {}", roomId, userId);
+                    StudyRoom fallbackRoom = studyRoomRepository.findById(roomId).orElse(null);
+                    if (fallbackRoom != null && fallbackRoom.getUserId().equals(userId)) {
+                        log.warn("⚠️ REJOIN - 방장 권한 검증 실패했지만 폴백으로 통과 - 방ID: {}, 방장ID: {}", roomId, userId);
+                        validatedRoom = fallbackRoom;
+                    } else {
+                        throw e;
+                    }
+                } else {
+                    throw e;
                 }
-
-                throw e;
             }
             log.info("✅ REJOIN - 3단계: 접근 권한 검증 완료 - 방ID: {}, 사용자ID: {}", roomId, userId);
 
