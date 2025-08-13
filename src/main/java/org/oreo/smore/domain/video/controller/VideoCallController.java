@@ -170,9 +170,9 @@ public class VideoCallController {
                     .orElseThrow(() -> new RoomNotFoundException(roomId));
 
             boolean isOwner = studyRoom.getUserId().equals(userId);
-            log.info("🔍 REJOIN - 방장 여부: {} (방장ID: {}, 요청자ID: {})", isOwner, studyRoom.getUserId(), userId);
+            log.info(" REJOIN - 방장 여부: {} (방장ID: {}, 요청자ID: {})", isOwner, studyRoom.getUserId(), userId);
 
-            // 2. 🔥 방장인 경우 특별 처리 (권한 검증 없이 무조건 성공)
+            // 2.  방장인 경우 특별 처리 (권한 검증 없이 무조건 성공)
             if (isOwner) {
                 log.info("👑 REJOIN - 방장 재입장 처리 시작 - 방ID: {}, 방장ID: {}", roomId, userId);
 
@@ -180,11 +180,11 @@ public class VideoCallController {
                 boolean isInRoom = participantService.isUserInRoom(roomId, userId);
                 if (!isInRoom) {
                     try {
-                        log.info("🔄 REJOIN - 방장을 참가자 목록에 재등록 - 방ID: {}, 방장ID: {}", roomId, userId);
+                        log.info("REJOIN - 방장을 참가자 목록에 재등록 - 방ID: {}, 방장ID: {}", roomId, userId);
                         participantService.joinRoom(roomId, userId);
-                        log.info("✅ REJOIN - 방장 참가자 재등록 완료 - 방ID: {}, 방장ID: {}", roomId, userId);
+                        log.info("REJOIN - 방장 참가자 재등록 완료 - 방ID: {}, 방장ID: {}", roomId, userId);
                     } catch (Exception e) {
-                        log.warn("⚠️ REJOIN - 방장 참가자 재등록 실패하지만 계속 진행 - 방ID: {}, 방장ID: {}, 오류: {}",
+                        log.warn("⚠REJOIN - 방장 참가자 재등록 실패하지만 계속 진행 - 방ID: {}, 방장ID: {}, 오류: {}",
                                 roomId, userId, e.getMessage());
                     }
                 }
@@ -214,10 +214,10 @@ public class VideoCallController {
             }
 
             // 3. 일반 참가자 처리 (기존 로직 유지)
-            log.info("👤 REJOIN - 일반 참가자 재입장 처리 - 방ID: {}, 사용자ID: {}", roomId, userId);
+            log.info("REJOIN - 일반 참가자 재입장 처리 - 방ID: {}, 사용자ID: {}", roomId, userId);
 
             boolean isInRoom = participantService.isUserInRoom(roomId, userId);
-            log.info("🔍 REJOIN - 참가 여부: {} - 방ID: {}, 사용자ID: {}", isInRoom, roomId, userId);
+            log.info("REJOIN - 참가 여부: {} - 방ID: {}, 사용자ID: {}", isInRoom, roomId, userId);
 
             if (!isInRoom) {
                 // 정원 확인
