@@ -126,31 +126,59 @@ public class VideoCallController {
         log.info("스터디룸 토큰 재발급 요청 - 방ID: {}, 사용자ID: {}, 닉네임: [{}]",
                 roomId, userId, userNickname);
 
-        // 현재 참가중인지 확인
-        boolean isInRoom = participantService.isUserInRoom(roomId, userId);
-        if (!isInRoom) {
-            log.warn("❌ 재입장 실패: 참가하지 않은 사용자 - 방ID: {}, 사용자ID: {}", roomId, userId);
+        try {
+            // 1. 방 존재 여부 확인
+            StudyRoom studyRoom = studyRoomRepository.findById(roomId)
+                    .orElseThrow(() -> new RoomNotFoundException(roomId));
+
+            // 2. 현재 참가중인지 확인 (기존 코드)
+            boolean isInRoom = participantService.isUserInRoom(roomId, userId);
+            if (!isInRoom) {
+                log.info("🔄 사용자가 방에 없음 - 재참가 처리 시도 - 방ID: {}, 사용자ID: {}", roomId, userId);
+
+                try {
+                    // 방 정원 확인
+                    long currentParticipants = participantService.getActiveParticipantCount(roomId);
+                    if (currentParticipants >= studyRoom.getMaxParticipants()) {
+                        throw new RoomCapacityExceededException(roomId, (int) currentParticipants, studyRoom.getMaxParticipants());
+                    }
+
+                    // 자동으로 다시 참가 처리 (기존 joinRoom 메서드 활용)
+                    participantService.joinRoom(roomId, userId);
+                    log.info("✅ 재참가 처리 완료 - 방ID: {}, 사용자ID: {}", roomId, userId);
+
+                } catch (Exception e) {
+                    log.error("❌ 재참가 처리 실패 - 방ID: {}, 사용자ID: {}, 오류: {}", roomId, userId, e.getMessage());
+                    // 재참가 실패해도 토큰 발급은 시도 (관대한 정책)
+                    log.warn("재참가 실패했지만 토큰 발급 계속 진행 - 방ID: {}, 사용자ID: {}", roomId, userId);
+                }
+            }
+
+            // 3. 접근 권한 검증 (기존 코드)
+            StudyRoom validatedRoom = studyRoomValidator.validateRejoinAccess(roomId, userId);
+
+            // 방 정보 로깅
+            studyRoomValidator.logRoomInfo(validatedRoom);
+
+            String liveKitRoomName = validatedRoom.hasLiveKitRoom()
+                    ? validatedRoom.getLiveKitRoomId()
+                    : validatedRoom.generateLiveKitRoomId();
+
+            // 토큰 재발급 (기존 코드)
+            TokenResponse tokenResponse = tokenService.regenerateToken(
+                    liveKitRoomName,
+                    userNickname
+            );
+
+            log.info("✅ 스터디룸 토큰 재발급 성공 - DB방ID: {}, LiveKit방: [{}], 닉네임: [{}]",
+                    roomId, liveKitRoomName, userNickname);
+
+            return ResponseEntity.ok(tokenResponse);
+
+        } catch (Exception e) {
+            log.error("❌ 재입장 실패 - 방ID: {}, 사용자ID: {}, 오류: {}", roomId, userId, e.getMessage());
             return ResponseEntity.badRequest().build();
         }
-
-        StudyRoom studyRoom = studyRoomValidator.validateRejoinAccess(roomId, userId);
-
-        // 방 정보 로깅
-        studyRoomValidator.logRoomInfo(studyRoom);
-        
-        String liveKitRoomName = studyRoom.hasLiveKitRoom()
-                ? studyRoom.getLiveKitRoomId()
-                : studyRoom.generateLiveKitRoomId();
-
-        // 토큰 재발급
-        TokenResponse tokenResponse = tokenService.regenerateToken(
-                liveKitRoomName,
-                userNickname
-        );
-        log.info("✅ 스터디룸 토큰 재발급 성공 - DB방ID: {}, LiveKit방: [{}], 닉네임: [{}]",
-                roomId, liveKitRoomName, userNickname);
-
-        return ResponseEntity.ok(tokenResponse);
     }
 
     @PostMapping("/{roomId}/leave")
