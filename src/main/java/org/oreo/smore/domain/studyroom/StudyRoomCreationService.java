@@ -2,6 +2,7 @@ package org.oreo.smore.domain.studyroom;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.oreo.smore.domain.chat.ChatRoomService;
 import org.oreo.smore.domain.studyroom.StudyRoom;
 import org.oreo.smore.domain.studyroom.StudyRoomRepository;
 import org.oreo.smore.domain.studyroom.dto.CreateStudyRoomRequest;
@@ -20,6 +21,7 @@ import java.util.UUID;
 public class StudyRoomCreationService {
 
     private final StudyRoomRepository studyRoomRepository;
+    private final ChatRoomService chatRoomService;
     private final CloudStorageManager cloudStorageManager;
 
     @Transactional
@@ -49,6 +51,7 @@ public class StudyRoomCreationService {
             StudyRoom savedStudyRoom = studyRoomRepository.save(studyRoom);
             log.info("===스터디룸 DB 저장 완료 - 방ID: {}===", savedStudyRoom.getRoomId());
 
+           
             // 이미지 업로드
             if (request.getRoomImage() != null && !request.getRoomImage().isEmpty()) {
                 cloudStorageManager.deleteRoomImage(savedStudyRoom.getRoomId());
@@ -59,7 +62,16 @@ public class StudyRoomCreationService {
                 } catch (Exception e) {
                     throw new RuntimeException("프로필 이미지 업로드 실패", e);
                 }
+
             }
+          
+            // hatRoom 자동 생성 (StudyRoom 저장 후)
+            try {
+                chatRoomService.createChatRoom(savedStudyRoom);
+                log.info("===✅ 채팅방 자동 생성 완료 - 방ID: {}===", savedStudyRoom.getRoomId());
+            } catch (Exception chatException) {
+                log.error("❌ 채팅방 생성 실패 (무시됨) - 방ID: {}, 오류: {}",
+                        savedStudyRoom.getRoomId(), chatException.getMessage());
 
             // 응답 생성
             CreateStudyRoomResponse response = CreateStudyRoomResponse.from(savedStudyRoom);

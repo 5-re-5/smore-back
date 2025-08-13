@@ -49,30 +49,41 @@ spring:
       max-file-size: 10MB
       max-request-size: 10MB
 
-# 서버, JWT, LiveKit, Azure 등 공통 설정
+# 서버 설정 - 테스트에서는 context-path 완전 제거
 server:
   port: 8081
   servlet:
-    context-path: /api
+    context-path: /  # 🔥 빈 문자열 대신 "/" 사용하여 명시적으로 루트 경로 설정
 
+# 🔥 Base64로 인코딩된 JWT Secret 사용
 jwt:
-  access-token-secret: test-access-token-secret-key-for-testing-purpose-only
-  refresh-token-secret: test-refresh-token-secret-key-for-testing-purpose-only
+  access-token-secret: dGVzdC1hY2Nlc3MtdG9rZW4tc2VjcmV0LWtleS1mb3ItdGVzdGluZy1wdXJwb3NlLW9ubHk=
+  refresh-token-secret: dGVzdC1yZWZyZXNoLXRva2VuLXNlY3JldC1rZXktZm9yLXRlc3RpbmctcHVycG9zZS1vbmx5
   access-token-expiration-ms: 900000      # 15분
   refresh-token-expiration-ms: 604800000  # 7일
 
+# 테스트용 LiveKit 더미 설정 (환경변수 대신 고정값 사용)
 livekit:
-  url: ${LIVEKIT_URL}
-  apiKey: ${LIVEKIT_API_KEY}
-  apiSecret: ${LIVEKIT_API_SECRET}
+  url: https://dummy-livekit-test.example.com
+  serverUrl: https://dummy-livekit-test.example.com  # livekit.serverUrl 추가
+  apiKey: test-livekit-api-key
+  apiSecret: test-livekit-api-secret
 
+# 테스트용 Azure 더미 설정 (환경변수 대신 고정값 사용)
 azure:
   storage:
-    account-name: ${AZURE_STORAGE_ACCOUNT_NAME}
-    account-key: ${AZURE_STORAGE_ACCOUNT_KEY}
-    endpoint: ${AZURE_STORAGE_ENDPOINT}
-    container-name: ${AZURE_STORAGE_CONTAINER_NAME}
-    sas-token: ${AZURE_STORAGE_SAS_TOKEN}
+    account-name: test-azure-account
+    account-key: test-azure-account-key
+    endpoint: https://test-azure-storage.blob.core.windows.net
+    container-name: test-container
+    sas-token: test-sas-token
+
+# 테스트용 GMS 더미 설정 (WebClientConfig에서 사용)
+gms:
+  endpoint: https://dummy-gms-test.example.com
+  apiKey: test-gms-api-key
+  timeout: 5000
+  retryCount: 3
 
 logging:
   level:

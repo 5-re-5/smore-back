@@ -5,25 +5,22 @@ import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Root;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.oreo.smore.domain.chat.ChatRoomService;
 import org.oreo.smore.domain.participant.Participant;
 import org.oreo.smore.domain.participant.ParticipantRepository;
 import org.oreo.smore.domain.studyroom.dto.RecentStudyRoomsResponse;
 import org.oreo.smore.domain.studyroom.dto.StudyRoomDetailResponse;
 import org.oreo.smore.domain.studyroom.dto.StudyRoomInfoReadResponse;
 import org.oreo.smore.domain.participant.ParticipantService;
+import org.oreo.smore.domain.video.service.LiveKitRoomService;
 import org.oreo.smore.global.common.CursorPage;
 import org.oreo.smore.domain.user.User;
 import org.oreo.smore.domain.user.UserRepository;
 import org.springframework.data.domain.*;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.*;
@@ -37,6 +34,8 @@ public class StudyRoomService {
     private final ParticipantRepository participantRepository;
     private final UserRepository userRepo;
     private final ParticipantService participantService;
+    private final LiveKitRoomService liveKitRoomService;
+    private final ChatRoomService chatRoomService;
 
     // TODO : N+1 문제 해결하기
     public CursorPage<StudyRoomInfoReadResponse> listStudyRooms(
@@ -150,33 +149,57 @@ public class StudyRoomService {
     public void deleteStudyRoom(Long roomId, Long ownerId) {
         log.warn("방 삭제 처리 시작 - 방ID: {}, 방장ID: {}", roomId, ownerId);
 
-        // 방장 권한 확인
-        validateRoomOwner(roomId, ownerId);
+        try {
+            // 1. 방장 권한 확인
+            validateRoomOwner(roomId, ownerId);
 
-        // 현재 참가자 수 확인
-        List<Participant> activeParticipants = participantService.getActiveParticipants(roomId);
-        long participantCount = activeParticipants.size();
+            // 2. 현재 참가자 수 확인
+            List<Participant> activeParticipants = participantService.getActiveParticipants(roomId);
+            long participantCount = activeParticipants.size();
 
-        log.info("방 삭제 전 상태 - 방ID: {}, 활성 참가자 수: {}명", roomId, participantCount);
+            log.info("방 삭제 전 상태 - 방ID: {}, 활성 참가자 수: {}명", roomId, participantCount);
 
-        if (participantCount > 1) {
-            log.warn("⚠️ 다른 참가자가 있는 상태에서 방 삭제 - 방ID: {}, 영향받는 참가자: {}명",
-                    roomId, participantCount - 1);
+            if (participantCount > 1) {
+                log.warn("⚠️ 다른 참가자가 있는 상태에서 방 삭제 - 방ID: {}, 영향받는 참가자: {}명",
+                        roomId, participantCount - 1);
+            }
+
+            // 3. 참가 이력 삭제
+            participantService.deleteAllParticipantsByRoom(roomId);
+            log.info("✅ 참가 이력 삭제 완료 - 방ID: {}", roomId);
+
+            // 4. ✅ ChatRoom 및 메시지 삭제 추가
+            try {
+                chatRoomService.deleteChatRoomByStudyRoom(roomId);
+                log.info("✅ 채팅방 및 메시지 삭제 완료 - 방ID: {}", roomId);
+            } catch (Exception e) {
+                log.error("❌ 채팅방 삭제 실패 (계속 진행) - 방ID: {}, 오류: {}", roomId, e.getMessage());
+            }
+
+            // 5. StudyRoom 소프트 삭제
+            StudyRoom room = roomRepository.findById(roomId)
+                    .orElseThrow(() -> new IllegalArgumentException("Room not found: " + roomId));
+
+            room.delete();
+            roomRepository.save(room);
+            log.info("✅ 스터디룸 삭제 완료 - 방ID: {}", roomId);
+
+            // 6. LiveKit 방 삭제
+            try {
+                String roomName = LiveKitRoomService.generateRoomName(roomId);
+                liveKitRoomService.deleteRoomSafely(roomName);
+                log.info("✅ LiveKit 방 삭제 완료 - 방ID: {}, LiveKit방명: {}", roomId, roomName);
+            } catch (Exception e) {
+                log.error("❌ LiveKit 방 삭제 실패 (무시됨) - 방ID: {}, 오류: {}", roomId, e.getMessage());
+            }
+
+            log.warn("✅ 방 삭제 완료 - 방ID: {}, 방장ID: {}, 삭제된 참가자 수: {}명",
+                    roomId, ownerId, participantCount);
+
+        } catch (Exception e) {
+            log.error("❌ 방 삭제 실패 - 방ID: {}, 방장ID: {}, 오류: {}", roomId, ownerId, e.getMessage(), e);
+            throw new RuntimeException("방 삭제에 실패했습니다: " + e.getMessage(), e);
         }
-
-        // 참가 이력 먼저 삭제
-        participantService.deleteAllParticipantsByRoom(roomId);
-        log.info("✅ 참가 이력 삭제 완료 - 방ID: {}", roomId);
-
-        // 방 삭제
-        roomRepository.deleteById(roomId);
-        log.info("✅ 스터디룸 삭제 완료 - 방ID: {}", roomId);
-
-        // TODO: LiveKit 방 삭제
-
-        log.warn("✅ 방 삭제 완료 - 방ID: {}, 방장ID: {}, 삭제된 참가자 수: {}명",
-                roomId, ownerId, participantCount);
-
     }
 
     private void validateRoomOwner(Long roomId, Long ownerId) {
@@ -216,14 +239,32 @@ public class StudyRoomService {
             participantService.deleteAllParticipantsByRoom(roomId);
             log.info("✅ 참가 이력 삭제 완료 - 방ID: {}", roomId);
 
+            // ChatRoom 및 메시지 삭제 추가
+            try {
+                chatRoomService.deleteChatRoomByStudyRoom(roomId);
+                log.info("✅ 채팅방 및 메시지 삭제 완료 - 방ID: {}", roomId);
+            } catch (Exception e) {
+                log.error("❌ 채팅방 삭제 실패 (계속 진행) - 방ID: {}, 오류: {}", roomId, e.getMessage());
+            }
+
             // 스터디룸 삭제
-            roomRepository.deleteById(roomId);
-            log.info("✅ 스터디룸 삭제 완료 - 방ID: {}", roomId);
+            StudyRoom room = roomRepository.findById(roomId)
+                    .orElseThrow(() -> new IllegalArgumentException("방을 찾을 수 없습니다: " + roomId));
 
-            // TODO: LiveKit 방 삭제
-            // liveKitService.deleteRoom(roomId);
+            room.delete();
+            roomRepository.save(room);
+            log.info("✅ 스터디룸 소프트 삭제 완료 - 방ID: {}", roomId);
 
-            log.warn("방장 퇴장으로 방 완전 삭제 완료 - 방ID: {}, 방장ID: {}, 총 영향받은 참가자: {}명",
+            // 5. LiveKit 방 삭제
+            try {
+                String roomName = LiveKitRoomService.generateRoomName(roomId);
+                liveKitRoomService.deleteRoomSafely(roomName);
+                log.info("✅ LiveKit 방 삭제 완료 - 방ID: {}, LiveKit방명: {}", roomId, roomName);
+            } catch (Exception liveKitError) {
+                log.error("❌ LiveKit 방 삭제 실패 (무시됨) - 방ID: {}, 오류: {}", roomId, liveKitError.getMessage());
+            }
+
+            log.warn("✅ 방장 퇴장으로 방 완전 삭제 완료 - 방ID: {}, 방장ID: {}, 총 영향받은 참가자: {}명",
                     roomId, ownerId, participantCount);
 
         } catch (Exception e) {
