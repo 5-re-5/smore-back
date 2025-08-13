@@ -345,7 +345,7 @@ public class StudyRoomService {
                             .password(hasPassword)
                             .tag(room.getTag())
                             .thumbnailUrl(room.getThumbnailUrl())
-                            .isDeleted(room.getDeletedAt() != null)
+                            .isDelete(room.getDeletedAt() != null)
                             .build();
                 })
                 .toList();
