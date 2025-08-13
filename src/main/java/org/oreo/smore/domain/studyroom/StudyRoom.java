@@ -3,6 +3,7 @@ package org.oreo.smore.domain.studyroom;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
+import org.oreo.smore.domain.chat.ChatRoom;
 
 import java.time.LocalDateTime;
 
@@ -69,6 +70,9 @@ public class StudyRoom {
     @Column(name = "is_all_muted", nullable = false)
     private Boolean isAllMuted = false; // 기본값: 전체 음소거 비활성화
 
+    @OneToOne(mappedBy = "studyRoom", cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
+    private ChatRoom chatRoom;
+
     // soft delete용
     public void delete() {
         this.deletedAt = LocalDateTime.now();
@@ -131,5 +135,28 @@ public class StudyRoom {
         this.inviteHashCode = inviteHashCode;
         this.liveKitRoomId = liveKitRoomId;
         this.isAllMuted = isAllMuted != null ? isAllMuted : false;
+        this.initializeChatRoom();
+    }
+
+    // chatroom 관련 메서드
+    public void setChatRoom(ChatRoom chatRoom) {
+        this.chatRoom = chatRoom;
+    }
+
+    public boolean hasChatRoom() {
+        return this.chatRoom != null;
+    }
+
+    public boolean isChatRoomActive() {
+        return this.chatRoom != null && this.chatRoom.getIsActive();
+    }
+
+
+    private void initializeChatRoom() {
+        if (this.chatRoom == null) {
+            this.chatRoom = ChatRoom.builder()
+                    .studyRoom(this)
+                    .build();
+        }
     }
 }

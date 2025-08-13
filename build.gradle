@@ -26,6 +26,11 @@ repositories {
 dependencies {
     // LiveKit Server SDK
     implementation 'io.livekit:livekit-server:0.10.0'
+    // Retrofit
+    implementation 'com.squareup.retrofit2:retrofit:2.9.0'
+    implementation 'com.squareup.retrofit2:converter-gson:2.9.0'
+    implementation 'com.squareup.okhttp3:logging-interceptor:4.12.0'
+
     // gRPC 관련
     implementation 'io.grpc:grpc-netty-shaded:1.58.0'
     implementation 'io.grpc:grpc-protobuf:1.58.0'
@@ -37,6 +42,8 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-validation'
     // Azure Blob Storage
     implementation 'com.azure:azure-storage-blob:12.25.0'
+    // websocket
+    implementation 'org.springframework.boot:spring-boot-starter-websocket'
 
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
     implementation 'org.springframework.boot:spring-boot-starter-oauth2-client'
