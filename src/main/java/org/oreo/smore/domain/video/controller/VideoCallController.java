@@ -68,14 +68,39 @@ public class VideoCallController {
             }
 
             // 참가자를 DB에 일단 먼저 등록
-            Participant participant = participantService.joinRoom(roomId,  userId);
+            Participant participant = participantService.joinRoom(roomId, userId);
             log.info("✅ 참가자 DB 등록 완료 - 참가자ID: {}, 방ID: {}, 사용자ID: {}",
                     participant.getParticipantId(), roomId, userId);
 
-            // 3. 비밀번호 검증 (401)
+            // 3. 비밀번호 검증 (403)
             try {
+                log.info("🔐 비밀번호 검증 시작 - 방ID: {}, 사용자ID: {}", roomId, userId);
+                log.info("🔐 요청된 비밀번호: [{}]", request.getPassword()); // 비밀번호 로깅
+
                 studyRoom = studyRoomValidator.validateRoomAccess(roomId, request, userId);
+
+                log.info("✅ 비밀번호 검증 성공 - 방ID: {}, 사용자ID: {}", roomId, userId);
+
             } catch (SecurityException e) {
+                log.error("🔐 SecurityException 발생 - 방ID: {}, 사용자ID: {}, 메시지: [{}]", roomId, userId, e.getMessage());
+                log.error("🔐 SecurityException 스택트레이스:", e);
+                throw new IncorrectPasswordException(roomId);
+
+            } catch (IllegalArgumentException e) {
+                log.error("🔐 IllegalArgumentException 발생 - 방ID: {}, 사용자ID: {}, 메시지: [{}]", roomId, userId, e.getMessage());
+                log.error("🔐 IllegalArgumentException 스택트레이스:", e);
+                throw new IncorrectPasswordException(roomId);
+
+            } catch (RuntimeException e) {
+                log.error("🔐 RuntimeException 발생 - 방ID: {}, 사용자ID: {}, 클래스: [{}], 메시지: [{}]",
+                        roomId, userId, e.getClass().getSimpleName(), e.getMessage());
+                log.error("🔐 RuntimeException 스택트레이스:", e);
+                throw new IncorrectPasswordException(roomId);
+
+            } catch (Exception e) {
+                log.error("🔐 일반 Exception 발생 - 방ID: {}, 사용자ID: {}, 클래스: [{}], 메시지: [{}]",
+                        roomId, userId, e.getClass().getSimpleName(), e.getMessage());
+                log.error("🔐 Exception 스택트레이스:", e);
                 throw new IncorrectPasswordException(roomId);
             }
 
@@ -104,9 +129,31 @@ public class VideoCallController {
 
             return ResponseEntity.ok(tokenResponse);
 
+        } catch (RoomNotFoundException e) {
+            log.error("❌ 방을 찾을 수 없음 - 방ID: {}, 사용자ID: {}", roomId, userId);
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+
+        } catch (RoomCapacityExceededException e) {
+            log.error("❌ 방 정원 초과 - 방ID: {}, 현재 참가자: {}, 최대 참가자: {}",
+                    roomId, e.getCurrentCount(), e.getMaxCapacity());
+            return ResponseEntity.status(HttpStatus.CONFLICT).build();
+
+        } catch (IncorrectPasswordException e) {
+            log.error("❌ 비밀번호 오류 - 방ID: {}, 사용자ID: {}", roomId, userId);
+            // 401 대신 403 사용 (프론트 요구사항)
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+
+        } catch (IllegalStateException e) {
+            log.error("❌ 시스템 상태 오류 - 방ID: {}, 사용자ID: {}, 오류: {}", roomId, userId, e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+
+        } catch (ParticipantException e) {
+            log.error("❌ 참가자 처리 오류 - 방ID: {}, 사용자ID: {}, 오류: {}", roomId, userId, e.getMessage());
+            return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).build();
+
         } catch (Exception e) {
-            log.error("❌ 참가자 등록 실패 - 방ID: {}, 사용자ID: {}, 오류: {}", roomId, userId, e.getMessage());
-            return ResponseEntity.badRequest().build();
+            log.error("❌ 예상치 못한 오류 - 방ID: {}, 사용자ID: {}, 오류: {}", roomId, userId, e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
 
@@ -134,6 +181,7 @@ public class VideoCallController {
             // 2. 현재 참가중인지 확인 (기존 코드)
             boolean isInRoom = participantService.isUserInRoom(roomId, userId);
             if (!isInRoom) {
+                // ⭐ 새로고침의 경우를 고려해서 자동으로 재참가 처리
                 log.info("🔄 사용자가 방에 없음 - 재참가 처리 시도 - 방ID: {}, 사용자ID: {}", roomId, userId);
 
                 try {
