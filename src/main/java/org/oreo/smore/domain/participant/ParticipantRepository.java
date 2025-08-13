@@ -39,4 +39,6 @@ public interface ParticipantRepository extends JpaRepository<Participant, Long> 
     void deleteByRoomIdAndUserId(Long roomId, Long userId);
 
     long countByRoomIdAndLeftAtIsNull(Long roomId);
+
+    List<Participant> findAllByRoomIdAndUserIdAndLeftAtIsNull(Long roomId, Long userId);
 }

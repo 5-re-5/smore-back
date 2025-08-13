@@ -21,4 +21,6 @@ public interface StudyRoomRepository extends JpaRepository<StudyRoom, Long> {
 
     // cursor 기반 페이징을 위한 메서드
     Slice<StudyRoom> findAll(Specification<StudyRoom> spec, Pageable pageable);
+
+    Optional<StudyRoom> findByLiveKitRoomId(String liveKitRoomId);
 }
