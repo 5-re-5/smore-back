@@ -1,6 +1,8 @@
 package org.oreo.smore.domain.user;
 
 import lombok.RequiredArgsConstructor;
+import org.oreo.smore.domain.point.Point;
+import org.oreo.smore.domain.point.PointRepository;
 import org.oreo.smore.domain.studytime.StudyTime;
 import org.oreo.smore.domain.studytime.StudyTimeRepository;
 import org.oreo.smore.domain.user.dto.request.UserUpdateRequest;
@@ -26,6 +28,7 @@ public class UserService {
     private final UserRepository repository;
     private final StudyTimeRepository studyTimeRepository;
     private final CloudStorageManager cloudStorageManager;
+    private final PointRepository pointRepository;
 
     @Transactional
     public User registerOrUpdate(String email, String name) {
@@ -38,13 +41,26 @@ public class UserService {
                 .name(name)
                 .email(email)
                 .nickname(UUID.randomUUID().toString())
+                .profileUrl("https://oreost.blob.core.windows.net/oreos/default/user.png?t=202508130152")
                 .createdAt(LocalDateTime.now())
-                .goalStudyTime(0)
+                .goalStudyTime(60)
                 .level("O")
+                .targetDateTitle("스모어 시작")
+                .targetDate(LocalDateTime.now())
+                .determination("파이팅")
                 .build();
 
         User savedUser = repository.save(u);
         savedUser.setNickname("OREO" + savedUser.getUserId());
+
+        Point point = Point.builder()
+                .userId(savedUser.getUserId())
+                .delta(550)
+                .reason("가입 기념 지급")
+                .timestamp(LocalDateTime.now())
+                .build();
+        pointRepository.save(point);
+
         return repository.save(savedUser);
     }
 
@@ -73,7 +89,7 @@ public class UserService {
         // 이미지 삭제
         if (Boolean.TRUE.equals(req.getRemoveImage())) {
             cloudStorageManager.deleteProfileImage(userId);
-            user.setProfileUrl(null);
+            user.setProfileUrl("https://oreost.blob.core.windows.net/oreos/default/user.png?t=202508130152");
         }
 
         // 이미지 업로드

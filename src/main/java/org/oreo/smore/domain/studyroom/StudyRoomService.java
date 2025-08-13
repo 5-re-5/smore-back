@@ -342,13 +342,13 @@ public class StudyRoomService {
                             .roomId(room.getRoomId())
                             .title(room.getTitle())
                             .owner(owner.getNickname())
-                            .category(room.getCategory().name())
+                            .category(room.getCategory().getValue())
                             .maxParticipants(room.getMaxParticipants())
                             .currentParticipants(currentParticipants)
                             .password(hasPassword)
                             .tag(room.getTag())
                             .thumbnailUrl(room.getThumbnailUrl())
-                            .isDeleted(room.getDeletedAt() != null)
+                            .isDelete(room.getDeletedAt() != null)
                             .build();
                 })
                 .toList();
