@@ -172,7 +172,7 @@ public class VideoCallController {
             boolean isOwner = studyRoom.getUserId().equals(userId);
             log.info("🔍 REJOIN - 방장 여부: {} (방장ID: {}, 요청자ID: {})", isOwner, studyRoom.getUserId(), userId);
 
-            // 2. 🔥 방장인 경우 특별 처리 (참가자 상태와 무관하게 토큰 발급)
+            // 2. 🔥 방장인 경우 특별 처리 (권한 검증 없이 무조건 성공)
             if (isOwner) {
                 log.info("👑 REJOIN - 방장 재입장 처리 시작 - 방ID: {}, 방장ID: {}", roomId, userId);
 
@@ -189,18 +189,31 @@ public class VideoCallController {
                     }
                 }
 
-                // 방장은 권한 검증 없이 바로 토큰 발급
-                String liveKitRoomName = studyRoom.hasLiveKitRoom()
-                        ? studyRoom.getLiveKitRoomId()
-                        : studyRoom.generateLiveKitRoomId();
+                studyRoomValidator.logRoomInfo(studyRoom);
 
-                TokenResponse tokenResponse = tokenService.regenerateToken(liveKitRoomName, userNickname);
+                // LiveKit 방ID 확보
+                String liveKitRoomName = ensureLiveKitRoom(studyRoom);
+                if (liveKitRoomName == null || liveKitRoomName.trim().isEmpty()) {
+                    log.error("❌ LiveKit 방 ID가 없습니다 - 방ID: {}", roomId);
+                    throw new IllegalStateException("LiveKit 방 정보가 올바르지 않습니다.");
+                }
+
+                // 방장은 권한 검증 없이 바로 토큰 발급
+                TokenRequest tokenRequest = TokenRequest.builder()
+                        .roomName(liveKitRoomName)
+                        .identity(userNickname)
+                        .canPublish(request.getCanPublish())
+                        .canSubscribe(request.getCanSubscribe())
+                        .tokenExpirySeconds(request.getTokenExpirySeconds())
+                        .build();
+
+                TokenResponse tokenResponse = tokenService.generateToken(tokenRequest);
                 log.info("✅ 방장 재입장 성공 - DB방ID: {}, LiveKit방: [{}], 방장: [{}]", roomId, liveKitRoomName, userNickname);
 
                 return ResponseEntity.ok(tokenResponse);
             }
 
-            // 3. 일반 참가자 처리
+            // 3. 일반 참가자 처리 (기존 로직 유지)
             log.info("👤 REJOIN - 일반 참가자 재입장 처리 - 방ID: {}, 사용자ID: {}", roomId, userId);
 
             boolean isInRoom = participantService.isUserInRoom(roomId, userId);
@@ -229,7 +242,16 @@ public class VideoCallController {
                     ? validatedRoom.getLiveKitRoomId()
                     : validatedRoom.generateLiveKitRoomId();
 
-            TokenResponse tokenResponse = tokenService.regenerateToken(liveKitRoomName, userNickname);
+            // LiveKit 토큰 생성 요청
+            TokenRequest tokenRequest = TokenRequest.builder()
+                    .roomName(liveKitRoomName)
+                    .identity(userNickname)
+                    .canPublish(request.getCanPublish())
+                    .canSubscribe(request.getCanSubscribe())
+                    .tokenExpirySeconds(request.getTokenExpirySeconds())
+                    .build();
+
+            TokenResponse tokenResponse = tokenService.generateToken(tokenRequest);
             log.info("✅ 일반 참가자 재입장 성공 - DB방ID: {}, LiveKit방: [{}], 닉네임: [{}]", roomId, liveKitRoomName, userNickname);
 
             return ResponseEntity.ok(tokenResponse);
@@ -243,12 +265,14 @@ public class VideoCallController {
         } catch (SecurityException e) {
             log.error("❌ 재입장 실패: 접근 권한 없음 - 방ID: {}, 사용자ID: {}", roomId, userId);
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        } catch (IllegalStateException e) {
+            log.error("❌ 재입장 실패: 시스템 상태 오류 - 방ID: {}, 사용자ID: {}, 오류: {}", roomId, userId, e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         } catch (Exception e) {
             log.error("❌ 재입장 실패: 예상치 못한 오류 - 방ID: {}, 사용자ID: {}, 오류: {}", roomId, userId, e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
-
 
     @PostMapping("/{roomId}/leave")
     public ResponseEntity<TokenResponse> leaveRoom(
