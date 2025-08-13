@@ -296,7 +296,7 @@ public class StudyRoomService {
                 .description(room.getDescription())
                 .thumbnailUrl(room.getThumbnailUrl())
                 .tag(room.getTag())
-                .category(room.getCategory().name())
+                .category(room.getCategory().getValue())
                 .focusTime(room.getFocusTime())
                 .breakTime(room.getBreakTime())
                 .maxParticipants(room.getMaxParticipants())

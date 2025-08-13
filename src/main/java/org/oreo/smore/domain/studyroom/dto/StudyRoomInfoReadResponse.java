@@ -74,11 +74,11 @@ public class StudyRoomInfoReadResponse implements Identifiable {
                 e.getDescription(),
                 e.getThumbnailUrl(),
                 tags,
-                e.getCategory().name(),         // enum → String
+                e.getCategory().getValue(),         // enum → String
                 e.getMaxParticipants(),
                 currentParticipants,
                 created,
-                e.getFocusTime() == null,
+                !(e.getFocusTime() == null),
                 !(e.getPassword() == null || e.getPassword().isEmpty()),
                 new CreatorDto(creatorNickname)
         );
