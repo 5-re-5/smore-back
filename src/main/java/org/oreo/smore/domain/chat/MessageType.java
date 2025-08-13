@@ -17,5 +17,7 @@ public enum MessageType {
     FOCUS_START,
 
     // 휴식 시간 시작 알림
-    BREAK_START
+    BREAK_START,
+
+    ROOM_DELETED
 }

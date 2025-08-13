@@ -11,7 +11,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 @RestController
-@RequestMapping("/v1/chat")
+@RequestMapping("/v1/study-rooms/{roomId}/chat")
 @RequiredArgsConstructor
 @Slf4j
 public class ChatRestController {
