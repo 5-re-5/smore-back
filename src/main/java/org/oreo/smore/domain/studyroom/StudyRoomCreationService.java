@@ -47,6 +47,9 @@ public class StudyRoomCreationService {
                     request.hasTimerSettings() ? "설정됨" : "없음",
                     studyRoom.getMaxParticipants());
 
+            // 스터디룸 기본 이미지 생성
+            studyRoom.setThumbnailUrl("https://oreost.blob.core.windows.net/oreos/default/room.png?t=202508130152");
+
             // DB 저장
             StudyRoom savedStudyRoom = studyRoomRepository.save(studyRoom);
             log.info("===스터디룸 DB 저장 완료 - 방ID: {}===", savedStudyRoom.getRoomId());
