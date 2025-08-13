@@ -68,11 +68,6 @@ public class VideoCallController {
                 throw new RoomCapacityExceededException(roomId, (int) currentParticipants, studyRoom.getMaxParticipants());
             }
 
-            // 참가자를 DB에 일단 먼저 등록
-            Participant participant = participantService.joinRoom(roomId, userId);
-            log.info("✅ 참가자 DB 등록 완료 - 참가자ID: {}, 방ID: {}, 사용자ID: {}",
-                    participant.getParticipantId(), roomId, userId);
-
             // 3. 비밀번호 검증 (403)
             try {
                 studyRoom = studyRoomValidator.validateRoomAccess(roomId, request, userId);
@@ -92,6 +87,11 @@ public class VideoCallController {
                 log.error("🔐 비밀번호 오류로 판단 - 방ID: {}, 사용자ID: {}", roomId, userId);
                 throw new IncorrectPasswordException(roomId); // 403으로 처리
             }
+
+            // 참가자를 DB에 일단 먼저 등록
+            Participant participant = participantService.joinRoom(roomId, userId);
+            log.info("✅ 참가자 DB 등록 완료 - 참가자ID: {}, 방ID: {}, 사용자ID: {}",
+                    participant.getParticipantId(), roomId, userId);
 
             studyRoomValidator.logRoomInfo(studyRoom);
             // LiveKit 방ID
@@ -142,6 +142,13 @@ public class VideoCallController {
 
         } catch (Exception e) {
             log.error("❌ 예상치 못한 오류 - 방ID: {}, 사용자ID: {}, 오류: {}", roomId, userId, e.getMessage(), e);
+
+            boolean roomStillExists = studyRoomRepository.existsById(roomId);
+            if (!roomStillExists) {
+                log.error("❌ 처리 중 방이 삭제됨 - 방ID: {}, 사용자ID: {}", roomId, userId);
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+            }
+
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
