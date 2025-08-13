@@ -153,169 +153,102 @@ public class VideoCallController {
         }
     }
 
-    // 네트워크 끊김 등 재입장할 경우
     @PostMapping("/{roomId}/rejoin")
     public ResponseEntity<TokenResponse> rejoinRoom(
             @PathVariable Long roomId,
             @RequestParam Long userId,
             @Valid @RequestBody JoinRoomRequest request,
-            Authentication authentication
-    ) {
-        // 인증 검증
+            Authentication authentication) {
+
         validateAuthentication(authentication, userId);
-
         String userNickname = userIdentityService.generateIdentityForUser(userId);
-
-        log.info("🔄 스터디룸 토큰 재발급 요청 - 방ID: {}, 사용자ID: {}, 닉네임: [{}]",
-                roomId, userId, userNickname);
+        log.info("🔄 스터디룸 토큰 재발급 요청 - 방ID: {}, 사용자ID: {}, 닉네임: [{}]", roomId, userId, userNickname);
 
         try {
             // 1. 방 존재 여부 확인
-            log.info("🔍 REJOIN - 1단계: 방 존재 여부 확인 시작 - 방ID: {}", roomId);
             StudyRoom studyRoom = studyRoomRepository.findById(roomId)
                     .orElseThrow(() -> new RoomNotFoundException(roomId));
 
-            // 방장 여부 미리 확인
             boolean isOwner = studyRoom.getUserId().equals(userId);
             log.info("🔍 REJOIN - 방장 여부: {} (방장ID: {}, 요청자ID: {})", isOwner, studyRoom.getUserId(), userId);
-            log.info("✅ REJOIN - 1단계: 방 존재 확인 완료 - 방ID: {}", roomId);
 
-            // 2. 현재 참가중인지 확인
-            log.info("🔍 REJOIN - 2단계: 참가 여부 확인 시작 - 방ID: {}, 사용자ID: {}", roomId, userId);
-            boolean isInRoom = participantService.isUserInRoom(roomId, userId);
-            log.info("🔍 REJOIN - 2단계: 참가 여부 결과 - 방ID: {}, 사용자ID: {}, 참가중: {}", roomId, userId, isInRoom);
-
-            // 🔥 방장인 경우 참가자 등록 없이 바로 토큰 발급으로 이동
+            // 2. 🔥 방장인 경우 특별 처리 (참가자 상태와 무관하게 토큰 발급)
             if (isOwner) {
-                log.info("🔥 REJOIN - 방장 전용 처리 시작 - 방ID: {}, 방장ID: {}", roomId, userId);
+                log.info("👑 REJOIN - 방장 재입장 처리 시작 - 방ID: {}, 방장ID: {}", roomId, userId);
 
-                // 방이 여전히 존재하는지 재확인
-                if (!studyRoomRepository.existsById(roomId)) {
-                    log.error("❌ REJOIN - 방장 처리 중 방이 삭제됨 - 방ID: {}", roomId);
-                    throw new RoomNotFoundException(roomId);
+                // 방장이 참가자 목록에 없다면 자동으로 추가 (데이터 정합성 보장)
+                boolean isInRoom = participantService.isUserInRoom(roomId, userId);
+                if (!isInRoom) {
+                    try {
+                        log.info("🔄 REJOIN - 방장을 참가자 목록에 재등록 - 방ID: {}, 방장ID: {}", roomId, userId);
+                        participantService.joinRoom(roomId, userId);
+                        log.info("✅ REJOIN - 방장 참가자 재등록 완료 - 방ID: {}, 방장ID: {}", roomId, userId);
+                    } catch (Exception e) {
+                        log.warn("⚠️ REJOIN - 방장 참가자 재등록 실패하지만 계속 진행 - 방ID: {}, 방장ID: {}, 오류: {}",
+                                roomId, userId, e.getMessage());
+                    }
                 }
 
-                // 방장은 참가자 등록 없이 바로 토큰 발급
-                log.info("🔍 REJOIN - 방장용 토큰 발급 시작 - 방ID: {}, 방장ID: {}", roomId, userId);
-
+                // 방장은 권한 검증 없이 바로 토큰 발급
                 String liveKitRoomName = studyRoom.hasLiveKitRoom()
                         ? studyRoom.getLiveKitRoomId()
                         : studyRoom.generateLiveKitRoomId();
 
-                log.info("🔍 REJOIN - 방장용 LiveKit방: [{}]", liveKitRoomName);
-
                 TokenResponse tokenResponse = tokenService.regenerateToken(liveKitRoomName, userNickname);
-
-                log.info("✅ 방장 재입장 성공 - DB방ID: {}, LiveKit방: [{}], 방장: [{}]",
-                        roomId, liveKitRoomName, userNickname);
+                log.info("✅ 방장 재입장 성공 - DB방ID: {}, LiveKit방: [{}], 방장: [{}]", roomId, liveKitRoomName, userNickname);
 
                 return ResponseEntity.ok(tokenResponse);
             }
 
-            // 🔥 일반 참가자 처리 (기존 로직)
+            // 3. 일반 참가자 처리
+            log.info("👤 REJOIN - 일반 참가자 재입장 처리 - 방ID: {}, 사용자ID: {}", roomId, userId);
+
+            boolean isInRoom = participantService.isUserInRoom(roomId, userId);
+            log.info("🔍 REJOIN - 참가 여부: {} - 방ID: {}, 사용자ID: {}", isInRoom, roomId, userId);
+
             if (!isInRoom) {
-                log.info("🔄 REJOIN - 일반 참가자 재참가 처리 시도 - 방ID: {}, 사용자ID: {}", roomId, userId);
+                // 정원 확인
+                long currentParticipants = participantService.getActiveParticipantCount(roomId);
+                if (currentParticipants >= studyRoom.getMaxParticipants()) {
+                    throw new RoomCapacityExceededException(roomId, (int) currentParticipants, studyRoom.getMaxParticipants());
+                }
 
+                // 재참가 처리
                 try {
-                    // 방 정원 확인
-                    long currentParticipants = participantService.getActiveParticipantCount(roomId);
-                    log.info("🔍 REJOIN - 현재 참가자 수: {} / {}", currentParticipants, studyRoom.getMaxParticipants());
-
-                    if (currentParticipants >= studyRoom.getMaxParticipants()) {
-                        throw new RoomCapacityExceededException(roomId, (int) currentParticipants, studyRoom.getMaxParticipants());
-                    }
-
-                    // 방이 여전히 존재하는지 확인 후 참가자 등록
-                    if (!studyRoomRepository.existsById(roomId)) {
-                        log.error("❌ REJOIN - 참가자 등록 전 방이 삭제됨 - 방ID: {}", roomId);
-                        throw new RoomNotFoundException(roomId);
-                    }
-
-                    log.info("🔍 REJOIN - 일반 참가자 재참가 처리 시작 - 방ID: {}, 사용자ID: {}", roomId, userId);
                     participantService.joinRoom(roomId, userId);
-                    log.info("✅ REJOIN - 일반 참가자 재참가 처리 완료 - 방ID: {}, 사용자ID: {}", roomId, userId);
-
-                } catch (RoomCapacityExceededException e) {
-                    log.error("❌ REJOIN - 정원 초과로 재참가 실패 - 방ID: {}, 사용자ID: {}", roomId, userId);
-                    throw e;
+                    log.info("✅ REJOIN - 일반 참가자 재참가 완료 - 방ID: {}, 사용자ID: {}", roomId, userId);
                 } catch (Exception e) {
-                    log.error("❌ REJOIN - 재참가 처리 실패 - 방ID: {}, 사용자ID: {}, 예외: {}, 메시지: {}",
-                            roomId, userId, e.getClass().getSimpleName(), e.getMessage());
-
-                    // 방이 삭제되었는지 확인
-                    if (!studyRoomRepository.existsById(roomId)) {
-                        log.error("❌ REJOIN - 재참가 처리 중 방이 삭제됨 - 방ID: {}", roomId);
-                        throw new RoomNotFoundException(roomId);
-                    }
-
-                    log.warn("🔄 REJOIN - 재참가 실패했지만 토큰 발급 계속 진행 - 방ID: {}, 사용자ID: {}", roomId, userId);
+                    log.error("❌ REJOIN - 재참가 실패 - 방ID: {}, 사용자ID: {}, 오류: {}", roomId, userId, e.getMessage());
+                    throw e;
                 }
             }
 
-            // 3. 일반 참가자 접근 권한 검증
-            log.info("🔍 REJOIN - 3단계: 일반 참가자 접근 권한 검증 시작 - 방ID: {}, 사용자ID: {}", roomId, userId);
-
-            StudyRoom validatedRoom;
-            try {
-                validatedRoom = studyRoomValidator.validateRejoinAccess(roomId, userId);
-                log.info("✅ REJOIN - 3단계: 접근 권한 검증 성공 - 방ID: {}, 사용자ID: {}", roomId, userId);
-
-            } catch (StudyRoomNotFoundException e) {
-                log.error("❌ REJOIN - validateRejoinAccess에서 방을 찾을 수 없음 - 방ID: {}, 사용자ID: {}", roomId, userId);
-                throw new RoomNotFoundException(roomId);
-
-            } catch (Exception e) {
-                log.error("❌ REJOIN - 권한 검증 중 예상치 못한 오류 - 방ID: {}, 사용자ID: {}, 예외: {}, 메시지: {}",
-                        roomId, userId, e.getClass().getSimpleName(), e.getMessage());
-                throw new SecurityException("접근 권한이 없습니다");
-            }
-
-            // 방 정보 로깅
-            studyRoomValidator.logRoomInfo(validatedRoom);
-
+            // 일반 참가자 권한 검증
+            StudyRoom validatedRoom = studyRoomValidator.validateRejoinAccess(roomId, userId);
             String liveKitRoomName = validatedRoom.hasLiveKitRoom()
                     ? validatedRoom.getLiveKitRoomId()
                     : validatedRoom.generateLiveKitRoomId();
 
-            // 토큰 재발급
-            log.info("🔍 REJOIN - 4단계: 일반 참가자 토큰 재발급 시작 - LiveKit방: [{}]", liveKitRoomName);
             TokenResponse tokenResponse = tokenService.regenerateToken(liveKitRoomName, userNickname);
-            log.info("✅ REJOIN - 4단계: 일반 참가자 토큰 재발급 완료 - 방ID: {}, 사용자ID: {}", roomId, userId);
-
-            log.info("✅ 일반 참가자 토큰 재발급 성공 - DB방ID: {}, LiveKit방: [{}], 닉네임: [{}]",
-                    roomId, liveKitRoomName, userNickname);
+            log.info("✅ 일반 참가자 재입장 성공 - DB방ID: {}, LiveKit방: [{}], 닉네임: [{}]", roomId, liveKitRoomName, userNickname);
 
             return ResponseEntity.ok(tokenResponse);
 
         } catch (RoomNotFoundException e) {
             log.error("❌ 재입장 실패: 방을 찾을 수 없음 - 방ID: {}, 사용자ID: {}", roomId, userId);
             return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
-
         } catch (RoomCapacityExceededException e) {
-            log.error("❌ 재입장 실패: 방 정원 초과 - 방ID: {}, 현재: {}, 최대: {}",
-                    roomId, e.getCurrentCount(), e.getMaxCapacity());
+            log.error("❌ 재입장 실패: 방 정원 초과 - 방ID: {}, 현재: {}, 최대: {}", roomId, e.getCurrentCount(), e.getMaxCapacity());
             return ResponseEntity.status(HttpStatus.CONFLICT).build();
-
         } catch (SecurityException e) {
-            log.error("❌ 재입장 실패: 접근 권한 없음 - 방ID: {}, 사용자ID: {}, 메시지: {}", roomId, userId, e.getMessage());
+            log.error("❌ 재입장 실패: 접근 권한 없음 - 방ID: {}, 사용자ID: {}", roomId, userId);
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
-
         } catch (Exception e) {
-            log.error("❌ 재입장 실패: 예상치 못한 오류 - 방ID: {}, 사용자ID: {}, 예외: {}, 메시지: {}",
-                    roomId, userId, e.getClass().getSimpleName(), e.getMessage());
-            log.error("❌ 재입장 실패 스택트레이스:", e);
-
-            // 🔥 최종 방 존재 여부 확인
-            boolean roomExists = studyRoomRepository.existsById(roomId);
-            log.error("🔥 최종 방 존재 여부 - 방ID: {}, 존재: {}", roomId, roomExists);
-
-            if (!roomExists) {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
-            }
-
+            log.error("❌ 재입장 실패: 예상치 못한 오류 - 방ID: {}, 사용자ID: {}, 오류: {}", roomId, userId, e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
+
 
     @PostMapping("/{roomId}/leave")
     public ResponseEntity<TokenResponse> leaveRoom(
