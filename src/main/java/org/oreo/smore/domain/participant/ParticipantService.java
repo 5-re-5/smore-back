@@ -207,7 +207,7 @@ public class ParticipantService {
         log.warn("방 삭제로 인한 참가 이력 삭제 - 방ID: {}", roomId);
 
         long participantCount = participantRepository.countActiveParticipantsByRoomId(roomId);
-        participantRepository.deleteByRoomId(roomId);
+//        participantRepository.deleteByRoomId(roomId);
 
         log.warn("⚠️ 참가 이력 삭제 완료 - 방ID: {}, 삭제된 참가자 수: {}", roomId, participantCount);
     }
