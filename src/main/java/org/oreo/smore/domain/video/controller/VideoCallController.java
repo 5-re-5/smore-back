@@ -74,34 +74,22 @@ public class VideoCallController {
 
             // 3. 비밀번호 검증 (403)
             try {
-                log.info("🔐 비밀번호 검증 시작 - 방ID: {}, 사용자ID: {}", roomId, userId);
-                log.info("🔐 요청된 비밀번호: [{}]", request.getPassword()); // 비밀번호 로깅
-
                 studyRoom = studyRoomValidator.validateRoomAccess(roomId, request, userId);
 
-                log.info("✅ 비밀번호 검증 성공 - 방ID: {}, 사용자ID: {}", roomId, userId);
-
-            } catch (SecurityException e) {
-                log.error("🔐 SecurityException 발생 - 방ID: {}, 사용자ID: {}, 메시지: [{}]", roomId, userId, e.getMessage());
-                log.error("🔐 SecurityException 스택트레이스:", e);
-                throw new IncorrectPasswordException(roomId);
-
-            } catch (IllegalArgumentException e) {
-                log.error("🔐 IllegalArgumentException 발생 - 방ID: {}, 사용자ID: {}, 메시지: [{}]", roomId, userId, e.getMessage());
-                log.error("🔐 IllegalArgumentException 스택트레이스:", e);
-                throw new IncorrectPasswordException(roomId);
-
-            } catch (RuntimeException e) {
-                log.error("🔐 RuntimeException 발생 - 방ID: {}, 사용자ID: {}, 클래스: [{}], 메시지: [{}]",
-                        roomId, userId, e.getClass().getSimpleName(), e.getMessage());
-                log.error("🔐 RuntimeException 스택트레이스:", e);
-                throw new IncorrectPasswordException(roomId);
-
             } catch (Exception e) {
-                log.error("🔐 일반 Exception 발생 - 방ID: {}, 사용자ID: {}, 클래스: [{}], 메시지: [{}]",
+                log.error("🔐 비밀번호 검증 실패 - 방ID: {}, 사용자ID: {}, 예외: {}, 메시지: {}",
                         roomId, userId, e.getClass().getSimpleName(), e.getMessage());
-                log.error("🔐 Exception 스택트레이스:", e);
-                throw new IncorrectPasswordException(roomId);
+
+                // 예외 발생 시 방이 여전히 존재하는지 확인
+                boolean roomStillExists = studyRoomRepository.existsById(roomId);
+                if (!roomStillExists) {
+                    log.error("❌ 검증 중 방이 삭제됨 - 방ID: {}, 사용자ID: {}", roomId, userId);
+                    throw new RoomNotFoundException(roomId); // 404로 처리
+                }
+
+                // 방이 존재하면 비밀번호 오류로 처리
+                log.error("🔐 비밀번호 오류로 판단 - 방ID: {}, 사용자ID: {}", roomId, userId);
+                throw new IncorrectPasswordException(roomId); // 403으로 처리
             }
 
             studyRoomValidator.logRoomInfo(studyRoom);
@@ -181,7 +169,6 @@ public class VideoCallController {
             // 2. 현재 참가중인지 확인 (기존 코드)
             boolean isInRoom = participantService.isUserInRoom(roomId, userId);
             if (!isInRoom) {
-                // ⭐ 새로고침의 경우를 고려해서 자동으로 재참가 처리
                 log.info("🔄 사용자가 방에 없음 - 재참가 처리 시도 - 방ID: {}, 사용자ID: {}", roomId, userId);
 
                 try {
@@ -195,6 +182,9 @@ public class VideoCallController {
                     participantService.joinRoom(roomId, userId);
                     log.info("✅ 재참가 처리 완료 - 방ID: {}, 사용자ID: {}", roomId, userId);
 
+                } catch (RoomCapacityExceededException e) {
+                    // 정원 초과는 다시 throw
+                    throw e;
                 } catch (Exception e) {
                     log.error("❌ 재참가 처리 실패 - 방ID: {}, 사용자ID: {}, 오류: {}", roomId, userId, e.getMessage());
                     // 재참가 실패해도 토큰 발급은 시도 (관대한 정책)
@@ -223,9 +213,34 @@ public class VideoCallController {
 
             return ResponseEntity.ok(tokenResponse);
 
+        } catch (RoomNotFoundException e) {
+            log.error("❌ 재입장 실패: 방을 찾을 수 없음 - 방ID: {}, 사용자ID: {}", roomId, userId);
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+
+        } catch (RoomCapacityExceededException e) {
+            log.error("❌ 재입장 실패: 방 정원 초과 - 방ID: {}, 현재: {}, 최대: {}",
+                    roomId, e.getCurrentCount(), e.getMaxCapacity());
+            return ResponseEntity.status(HttpStatus.CONFLICT).build();
+
+        } catch (SecurityException e) {
+            log.error("❌ 재입장 실패: 접근 권한 없음 - 방ID: {}, 사용자ID: {}", roomId, userId);
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+
+        } catch (IllegalStateException e) {
+            log.error("❌ 재입장 실패: 시스템 상태 오류 - 방ID: {}, 사용자ID: {}, 오류: {}", roomId, userId, e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+
+        } catch (ParticipantException e) {
+            log.error("❌ 재입장 실패: 참가자 처리 오류 - 방ID: {}, 사용자ID: {}, 오류: {}", roomId, userId, e.getMessage());
+            return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).build();
+
+        } catch (UnauthorizedException e) {
+            log.error("❌ 재입장 실패: 인증 오류 - 방ID: {}, 사용자ID: {}, 오류: {}", roomId, userId, e.getMessage());
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+
         } catch (Exception e) {
-            log.error("❌ 재입장 실패 - 방ID: {}, 사용자ID: {}, 오류: {}", roomId, userId, e.getMessage());
-            return ResponseEntity.badRequest().build();
+            log.error("❌ 재입장 실패: 예상치 못한 오류 - 방ID: {}, 사용자ID: {}, 오류: {}", roomId, userId, e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
 
