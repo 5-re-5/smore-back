@@ -24,30 +24,32 @@ public class WebhookService {
     private final StudyRoomService studyRoomService;
 
     @Transactional
-    public void handleParticipantLeft(String roomName, String identity) {
-        if (roomName == null || identity == null) return;
+    public int handleParticipantLeft(String roomName, String identity) {
+        if (roomName == null || identity == null) return 0;
 
         Optional<StudyRoom> roomOpt = studyRoomRepository.findByLiveKitRoomId(roomName);
-        if (roomOpt.isEmpty()) return;
+        if (roomOpt.isEmpty()) return 0;
 
         Optional<User> userOpt = userRepository.findByNickname(identity);
-        if (userOpt.isEmpty()) return;
+        if (userOpt.isEmpty()) return 0;
 
         Long roomId = roomOpt.get().getRoomId();
         Long userId = userOpt.get().getUserId();
 
         if (roomOpt.get().getUserId().equals(userId)) {
             studyRoomService.deleteStudyRoom(roomId, userId);
+            return 1;
         }
 
         List<Participant> targets =
                 participantRepository.findAllByRoomIdAndUserIdAndLeftAtIsNull(roomId, userId);
 
-        if (targets.isEmpty()) return;
+        if (targets.isEmpty()) return 0;
 
         for (Participant p : targets) {
             p.leave();
         }
         participantRepository.saveAll(targets);
+        return 0;
     }
 }
