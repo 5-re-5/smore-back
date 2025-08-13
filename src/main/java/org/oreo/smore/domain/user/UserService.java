@@ -89,7 +89,7 @@ public class UserService {
         // 이미지 삭제
         if (Boolean.TRUE.equals(req.getRemoveImage())) {
             cloudStorageManager.deleteProfileImage(userId);
-            user.setProfileUrl(null);
+            user.setProfileUrl("https://oreost.blob.core.windows.net/oreos/default/user.png?t=202508130152");
         }
 
         // 이미지 업로드
