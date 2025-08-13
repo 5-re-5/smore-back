@@ -8,7 +8,9 @@ import java.time.DayOfWeek;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.*;
+import java.util.stream.Stream;
 
 @Service
 @RequiredArgsConstructor
@@ -110,11 +112,14 @@ public class StudyTimeService {
 
 
         // studyTrack (최근 1년)
-        List<StudyTimeStatisticsResponse.Point> points = dailyMinutes.entrySet().stream()
-                .filter(e -> !e.getKey().isBefore(oneYearAgo) && !e.getKey().isAfter(today))
-                .sorted(Map.Entry.comparingByKey())
-                .map(e -> new StudyTimeStatisticsResponse.Point(e.getKey().toString(), e.getValue()))
-                .toList();
+        List<StudyTimeStatisticsResponse.Point> points =
+                Stream.iterate(oneYearAgo, date -> date.plusDays(1))
+                        .limit(ChronoUnit.DAYS.between(oneYearAgo, today) + 1) // 최근 1년 날짜 전부
+                        .map(date -> new StudyTimeStatisticsResponse.Point(
+                                date.toString(),
+                                dailyMinutes.getOrDefault(date, 0) // 없으면 0
+                        ))
+                        .toList();
 
         return StudyTimeStatisticsResponse.builder()
                 .userId(userId)
