@@ -190,11 +190,13 @@ public class VideoCallController {
 
                 try {
                     // 방 정원 확인
-                    long currentParticipants = participantService.getActiveParticipantCount(roomId);
-                    log.info("🔍 REJOIN - 현재 참가자 수: {} / {}", currentParticipants, studyRoom.getMaxParticipants());
+                    if (!isOwner) {
+                        long currentParticipants = participantService.getActiveParticipantCount(roomId);
+                        log.info("🔍 REJOIN - 현재 참가자 수: {} / {}", currentParticipants, studyRoom.getMaxParticipants());
 
-                    if (currentParticipants >= studyRoom.getMaxParticipants()) {
-                        throw new RoomCapacityExceededException(roomId, (int) currentParticipants, studyRoom.getMaxParticipants());
+                        if (currentParticipants >= studyRoom.getMaxParticipants()) {
+                            throw new RoomCapacityExceededException(roomId, (int) currentParticipants, studyRoom.getMaxParticipants());
+                        }
                     }
 
                     // 자동으로 다시 참가 처리
@@ -216,45 +218,24 @@ public class VideoCallController {
             log.info("🔍 REJOIN - 3단계: 접근 권한 검증 시작 - 방ID: {}, 사용자ID: {}, 방장여부: {}", roomId, userId, isOwner);
 
             StudyRoom validatedRoom;
-            try {
-                validatedRoom = studyRoomValidator.validateRejoinAccess(roomId, userId);
-                log.info("✅ REJOIN - 3단계: 접근 권한 검증 성공 - 방ID: {}, 사용자ID: {}", roomId, userId);
+            if (isOwner) {
+                // 방장인 경우 별도 검증 없이 통과
+                log.info("✅ REJOIN - 방장 권한으로 접근 권한 검증 생략 - 방ID: {}, 방장ID: {}", roomId, userId);
+                validatedRoom = studyRoom;
+            } else {
+                // 일반 참가자인 경우만 검증
+                try {
+                    validatedRoom = studyRoomValidator.validateRejoinAccess(roomId, userId);
+                    log.info("✅ REJOIN - 3단계: 접근 권한 검증 성공 - 방ID: {}, 사용자ID: {}", roomId, userId);
 
-            } catch (StudyRoomNotFoundException e) {
-                log.error("❌ REJOIN - validateRejoinAccess에서 방을 찾을 수 없음 - 방ID: {}, 사용자ID: {}", roomId, userId);
-
-                // 방이 여전히 존재하는지 재확인
-                StudyRoom reCheckRoom = studyRoomRepository.findById(roomId).orElse(null);
-                if (reCheckRoom == null) {
-                    log.error("❌ REJOIN - 방이 실제로 삭제됨 - 방ID: {}, 사용자ID: {}", roomId, userId);
+                } catch (StudyRoomNotFoundException e) {
+                    log.error("❌ REJOIN - validateRejoinAccess에서 방을 찾을 수 없음 - 방ID: {}, 사용자ID: {}", roomId, userId);
                     throw new RoomNotFoundException(roomId);
-                }
 
-                // 방이 존재하는데 validateRejoinAccess가 실패하는 경우 - 방장이면 통과
-                if (isOwner) {
-                    log.warn("⚠️ REJOIN - 방장 권한 검증 실패했지만 방장이므로 통과 - 방ID: {}, 방장ID: {}", roomId, userId);
-                    validatedRoom = reCheckRoom;
-                } else {
-                    log.error("❌ REJOIN - 일반 참가자 권한 검증 실패 - 방ID: {}, 사용자ID: {}", roomId, userId);
+                } catch (Exception e) {
+                    log.error("❌ REJOIN - 권한 검증 중 예상치 못한 오류 - 방ID: {}, 사용자ID: {}, 예외: {}, 메시지: {}",
+                            roomId, userId, e.getClass().getSimpleName(), e.getMessage());
                     throw new SecurityException("접근 권한이 없습니다");
-                }
-
-            } catch (Exception e) {
-                log.error("❌ REJOIN - 권한 검증 중 예상치 못한 오류 - 방ID: {}, 사용자ID: {}, 예외: {}, 메시지: {}",
-                        roomId, userId, e.getClass().getSimpleName(), e.getMessage());
-                log.error("❌ REJOIN - 권한 검증 실패 스택트레이스:", e);
-
-                // 방장의 경우 더 관대한 처리
-                if (isOwner) {
-                    StudyRoom fallbackRoom = studyRoomRepository.findById(roomId).orElse(null);
-                    if (fallbackRoom != null && fallbackRoom.getUserId().equals(userId)) {
-                        log.warn("⚠️ REJOIN - 방장 권한 검증 실패했지만 폴백으로 통과 - 방ID: {}, 방장ID: {}", roomId, userId);
-                        validatedRoom = fallbackRoom;
-                    } else {
-                        throw e;
-                    }
-                } else {
-                    throw e;
                 }
             }
             log.info("✅ REJOIN - 3단계: 접근 권한 검증 완료 - 방ID: {}, 사용자ID: {}", roomId, userId);
