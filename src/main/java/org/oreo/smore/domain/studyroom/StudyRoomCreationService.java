@@ -72,7 +72,7 @@ public class StudyRoomCreationService {
             } catch (Exception chatException) {
                 log.error("❌ 채팅방 생성 실패 (무시됨) - 방ID: {}, 오류: {}",
                         savedStudyRoom.getRoomId(), chatException.getMessage());
-
+            }
             // 응답 생성
             CreateStudyRoomResponse response = CreateStudyRoomResponse.from(savedStudyRoom);
 
