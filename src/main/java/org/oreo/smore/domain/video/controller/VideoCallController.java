@@ -1,5 +1,8 @@
 package org.oreo.smore.domain.video.controller;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -369,6 +372,57 @@ public class VideoCallController {
             throw new SecurityException("본인 또는 방장만 조회할 수 있습니다");
         }
     }
+
+    @PatchMapping("/{roomId}/participants/{userId}/debug")
+    public ResponseEntity<String> debugUpdateParticipantStatus(
+            @PathVariable Long roomId,
+            @PathVariable Long userId,
+            @RequestBody String rawBody,
+            HttpServletRequest request,
+            Authentication authentication) {
+
+        log.info("🔍 DEBUG - 받은 원본 JSON: {}", rawBody);
+        log.info("🔍 DEBUG - Content-Type: {}", request.getContentType());
+        log.info("🔍 DEBUG - Method: {}", request.getMethod());
+        log.info("🔍 DEBUG - URI: {}", request.getRequestURI());
+
+        try {
+            // ObjectMapper로 직접 파싱해보기
+            ObjectMapper mapper = new ObjectMapper();
+            JsonNode jsonNode = mapper.readTree(rawBody);
+
+            log.info("🔍 DEBUG - 파싱된 JSON 구조: {}", jsonNode.toPrettyString());
+
+            // 각 필드 확인
+            JsonNode audioNode = jsonNode.get("audioEnabled");
+            JsonNode videoNode = jsonNode.get("videoEnabled");
+            JsonNode dataNode = jsonNode.get("data");
+
+            log.info("🔍 DEBUG - audioEnabled 필드: {} (타입: {})",
+                    audioNode, audioNode != null ? audioNode.getNodeType() : "null");
+            log.info("🔍 DEBUG - videoEnabled 필드: {} (타입: {})",
+                    videoNode, videoNode != null ? videoNode.getNodeType() : "null");
+            log.info("🔍 DEBUG - data 필드: {} (타입: {})",
+                    dataNode, dataNode != null ? dataNode.getNodeType() : "null");
+
+            // data 필드가 있으면 그 안의 내용도 확인
+            if (dataNode != null) {
+                JsonNode innerAudio = dataNode.get("audioEnabled");
+                JsonNode innerVideo = dataNode.get("videoEnabled");
+                log.info("🔍 DEBUG - data.audioEnabled: {} (타입: {})",
+                        innerAudio, innerAudio != null ? innerAudio.getNodeType() : "null");
+                log.info("🔍 DEBUG - data.videoEnabled: {} (타입: {})",
+                        innerVideo, innerVideo != null ? innerVideo.getNodeType() : "null");
+            }
+
+            return ResponseEntity.ok("디버깅 완료 - 로그 확인");
+
+        } catch (Exception e) {
+            log.error("🔍 DEBUG - JSON 파싱 실패: {}", e.getMessage());
+            return ResponseEntity.badRequest().body("JSON 파싱 실패: " + e.getMessage());
+        }
+    }
+
 
     // 개인 참가자 미디어 상태 변경
     @PatchMapping("/{roomId}/participants/{userId}")
