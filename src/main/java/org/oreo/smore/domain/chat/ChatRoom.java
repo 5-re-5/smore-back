@@ -60,9 +60,22 @@ public class ChatRoom {
 
     public void deactivate() {
         this.isActive = false;
+        this.updatedAt = LocalDateTime.now();
     }
 
     public void resetMessageCount(Long count) {
         this.totalMessageCount = count;
+    }
+
+    // 메시지 카운트 업데이트
+    public void updateMessageCount(Long count) {
+        this.totalMessageCount = count;
+        this.updatedAt = LocalDateTime.now();
+    }
+
+    // 마지막 메시지 시간 업데이트
+    public void updateLastMessageTime(LocalDateTime messageTime) {
+        this.lastMessageAt = messageTime;
+        this.updatedAt = LocalDateTime.now();
     }
 }

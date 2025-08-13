@@ -17,7 +17,8 @@ public interface ChatRoomRepository extends JpaRepository<ChatRoom, Long> {
     Optional<ChatRoom> findByStudyRoomId(Long studyRoomId);
 
     // 활성 상태인 ChatRoom 조회
-    @Query("SELECT cr FROM ChatRoom cr WHERE cr.studyRoomId = :studyRoomId AND cr.isActive = true")
+    @Query("SELECT cr FROM ChatRoom cr " +
+            "WHERE cr.studyRoomId = :studyRoomId AND cr.isActive = true")
     Optional<ChatRoom> findActiveByStudyRoomId(@Param("studyRoomId") Long studyRoomId);
 
     // 비활성 ChatRoom 목록 조회 -> 배치 정리용

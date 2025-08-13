@@ -24,6 +24,8 @@ public class ChatService {
     private final ChatMessageRepository chatMessageRepository;
     private final UserRepository userRepository;
 
+
+
     // 채팅 메시지 저장
     @Transactional
     public ChatMessageDTO.Response saveMessage(ChatMessageDTO.Request request, User user) {
