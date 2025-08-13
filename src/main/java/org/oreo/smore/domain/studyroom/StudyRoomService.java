@@ -342,7 +342,7 @@ public class StudyRoomService {
                             .roomId(room.getRoomId())
                             .title(room.getTitle())
                             .owner(owner.getNickname())
-                            .category(room.getCategory().name())
+                            .category(room.getCategory().getValue())
                             .maxParticipants(room.getMaxParticipants())
                             .currentParticipants(currentParticipants)
                             .password(hasPassword)
