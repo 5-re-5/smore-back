@@ -6,9 +6,13 @@ public class RoomCapacityExceededException extends RuntimeException {
     private final int maxCapacity;
 
     public RoomCapacityExceededException(Long roomId, int currentCount, int maxCapacity) {
-        super(String.format("방 정원 초과 - 방ID: %d, 현재인원: %d, 최대인원: %d", roomId, currentCount, maxCapacity));
+        super(String.format("방 정원 초과 - 방ID: %d, 현재: %d명, 최대: %d명", roomId, currentCount, maxCapacity));
         this.roomId = roomId;
         this.currentCount = currentCount;
         this.maxCapacity = maxCapacity;
     }
+
+    public Long getRoomId() { return roomId; }
+    public int getCurrentCount() { return currentCount; }
+    public int getMaxCapacity() { return maxCapacity; }
 }
