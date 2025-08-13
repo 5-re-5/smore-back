@@ -41,7 +41,8 @@ public class SecurityConfig {
                         .requestMatchers(
                                 "/v1/auth/**",                  // 자체 로그인/회원가입 API
                                 "/oauth2/authorization/**",     // OAuth2 로그인 진입점
-                                "/login/oauth2/code/**"         // OAuth2 콜백 엔드포인트
+                                "/login/oauth2/code/**",         // OAuth2 콜백 엔드포인트
+                                "/v1/webhook/**"
                         ).permitAll()
                         .anyRequest().authenticated()
                 )
