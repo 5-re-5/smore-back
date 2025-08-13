@@ -47,8 +47,10 @@ jobs:
           git remote add backend-source ../
           git fetch backend-source
 
-          # 서로 다른 히스토리 머지 허용하며, backend/ 디렉터리에 병합
-          git merge backend-source/main --allow-unrelated-histories \
+          # 충돌 시 backend-source(main) 내용 우선으로 자동 해결
+          git merge backend-source/main \
+            --allow-unrelated-histories \
+            -X theirs \
             -m "Merge smore-back → backend/ by ${{ github.actor }}"
 
           # 변경사항 푸시
