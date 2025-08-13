@@ -5,6 +5,7 @@ import org.oreo.smore.domain.participant.Participant;
 import org.oreo.smore.domain.participant.ParticipantRepository;
 import org.oreo.smore.domain.studyroom.StudyRoom;
 import org.oreo.smore.domain.studyroom.StudyRoomRepository;
+import org.oreo.smore.domain.studyroom.StudyRoomService;
 import org.oreo.smore.domain.user.User;
 import org.oreo.smore.domain.user.UserRepository;
 import org.springframework.stereotype.Service;
@@ -20,6 +21,7 @@ public class WebhookService {
     private final StudyRoomRepository studyRoomRepository;
     private final UserRepository userRepository;
     private final ParticipantRepository participantRepository;
+    private final StudyRoomService studyRoomService;
 
     @Transactional
     public void handleParticipantLeft(String roomName, String identity) {
@@ -33,6 +35,10 @@ public class WebhookService {
 
         Long roomId = roomOpt.get().getRoomId();
         Long userId = userOpt.get().getUserId();
+
+        if (roomOpt.get().getUserId().equals(userId)) {
+            studyRoomService.deleteStudyRoom(roomId, userId);
+        }
 
         List<Participant> targets =
                 participantRepository.findAllByRoomIdAndUserIdAndLeftAtIsNull(roomId, userId);
