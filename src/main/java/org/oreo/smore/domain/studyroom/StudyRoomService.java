@@ -37,6 +37,7 @@ public class StudyRoomService {
     private final LiveKitRoomService liveKitRoomService;
     private final ChatRoomService chatRoomService;
 
+    // TODO : N+1 문제 해결하기
     public CursorPage<StudyRoomInfoReadResponse> listStudyRooms(
             Long page,
             int limit,
@@ -59,8 +60,11 @@ public class StudyRoomService {
     }
 
     private Sort buildSortOrder(String sort) {
-        String property = isPopularSort(sort) ? "currentParticipants" : "createdAt";
-        return Sort.by(Sort.Direction.DESC, property);
+        if (isPopularSort(sort)) {
+            // 키셋 페이징을 위해 일관된 정렬 컬럼(실존 필드) 사용
+            return Sort.by(Sort.Direction.DESC, "roomId");
+        }
+        return Sort.by(Sort.Direction.DESC, "createdAt");
     }
 
     private boolean isPopularSort(String sort) {
@@ -282,6 +286,9 @@ public class StudyRoomService {
         // 3. 현재 참가자 수 계산 (퇴장 안 했고 강퇴도 안 당한 사용자)
         int currentParticipants = (int) participantRepository.countActiveParticipantsByRoomId(roomId);
 
+        // 4. 비밀번호 존재 여부 판단
+        boolean hasPassword = room.getPassword() != null && !room.getPassword().isBlank();
+
         // 4. 응답 DTO 생성
         return StudyRoomDetailResponse.builder()
                 .roomId(room.getRoomId())
@@ -289,11 +296,12 @@ public class StudyRoomService {
                 .description(room.getDescription())
                 .thumbnailUrl(room.getThumbnailUrl())
                 .tag(room.getTag())
-                .category(room.getCategory().name())
+                .category(room.getCategory().getValue())
                 .focusTime(room.getFocusTime())
                 .breakTime(room.getBreakTime())
                 .maxParticipants(room.getMaxParticipants())
                 .currentParticipants(currentParticipants)
+                .password(hasPassword)
                 .createdAt(room.getCreatedAt().toString())
                 .creator(StudyRoomDetailResponse.CreatorDto.builder()
                         .userId(creator.getUserId())
@@ -325,6 +333,8 @@ public class StudyRoomService {
 
                     int currentParticipants = (int) participantRepository.countActiveParticipantsByRoomId(roomId);
 
+                    boolean hasPassword = room.getPassword() != null && !room.getPassword().isBlank();
+
                     return RecentStudyRoomsResponse.RoomDto.builder()
                             .roomId(room.getRoomId())
                             .title(room.getTitle())
@@ -332,6 +342,7 @@ public class StudyRoomService {
                             .category(room.getCategory().name())
                             .maxParticipants(room.getMaxParticipants())
                             .currentParticipants(currentParticipants)
+                            .password(hasPassword)
                             .tag(room.getTag())
                             .thumbnailUrl(room.getThumbnailUrl())
                             .isDeleted(room.getDeletedAt() != null)

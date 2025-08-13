@@ -16,6 +16,7 @@ public class StudyRoomDetailResponse {
     private Integer breakTime;
     private Integer maxParticipants;
     private Integer currentParticipants;
+    private Boolean password;
     private String createdAt;
     private CreatorDto creator;
 
