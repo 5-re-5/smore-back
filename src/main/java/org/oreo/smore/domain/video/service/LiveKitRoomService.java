@@ -25,7 +25,7 @@ public class LiveKitRoomService {
     public LiveKitRoomService(
             @Value("${livekit.apiKey}") String apiKey,
             @Value("${livekit.apiSecret}") String apiSecret,
-            @Value("${livekit.serverUrl}") String serverUrl) {
+            @Value("${livekit.url}") String serverUrl) {
         this.serverUrl = serverUrl;
 
         if (apiKey == null || apiSecret == null || serverUrl == null) {
