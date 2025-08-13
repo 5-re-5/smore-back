@@ -28,7 +28,14 @@ public class WebhookController {
         if ("participant_joined".equals(event)) {
             // 참가자 입장
         } else if ("participant_left".equals(event)) {
-            webhookService.handleParticipantLeft(roomName, identity);
+            if (webhookService.handleParticipantLeft(roomName, identity) == 1) {
+                try {
+                    // deleteRoom 호출 → 모든 참가자 강제 분리 + 방 종료
+                    roomServiceClient.deleteRoom(roomName).execute();
+                } catch (Exception e) {
+                    // 로깅 및 재시도/보상 처리
+                }
+            }
         }
 
         return ResponseEntity.ok().build();
