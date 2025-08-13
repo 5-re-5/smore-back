@@ -57,7 +57,7 @@ public class ChatRestController {
     }
 
     // 특정 시간 이후의 최근 메시지 조회
-    @GetMapping("/rooms/{roomId}/messages/recent")
+    @GetMapping("/{roomId}/messages/recent")
     public List<ChatMessageDTO.Response> getRecentMessages(
             @PathVariable Long roomId,
             @RequestParam @DateTimeFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss") LocalDateTime since) {
@@ -68,7 +68,7 @@ public class ChatRestController {
     }
 
     // 채팅방의 최신 메시지 1개 조회
-    @GetMapping("/rooms/{roomId}/messages/latest")
+    @GetMapping("/{roomId}/messages/latest")
     public ChatMessageDTO.Response getLatestMessage(@PathVariable Long roomId) {
 
         log.info("🔍 최신 메시지 조회 요청 - 룸ID: {}", roomId);
@@ -77,7 +77,7 @@ public class ChatRestController {
     }
 
     // 메시지 삭제
-    @DeleteMapping("/rooms/{roomId}/messages/{messageId}")
+    @DeleteMapping("/{roomId}/messages/{messageId}")
     public String deleteMessage(
             @PathVariable Long roomId,
             @PathVariable Long messageId,
@@ -90,7 +90,7 @@ public class ChatRestController {
     }
 
     // 채팅방 메시지 개수 조회
-    @GetMapping("/rooms/{roomId}/messages/count")
+    @GetMapping("/{roomId}/messages/count")
     public Long getMessageCount(@PathVariable Long roomId) {
 
         log.info("📊 메시지 개수 조회 요청 - 룸ID: {}", roomId);
