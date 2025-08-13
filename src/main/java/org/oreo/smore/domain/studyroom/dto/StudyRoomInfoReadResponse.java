@@ -22,6 +22,8 @@ public class StudyRoomInfoReadResponse implements Identifiable {
 
     private String title;
 
+    private String description;
+
     private String thumbnailUrl;
 
     private List<String> tag;
@@ -69,6 +71,7 @@ public class StudyRoomInfoReadResponse implements Identifiable {
         return new StudyRoomInfoReadResponse(
                 e.getRoomId(),
                 e.getTitle(),
+                e.getDescription(),
                 e.getThumbnailUrl(),
                 tags,
                 e.getCategory().name(),         // enum → String

@@ -1,11 +1,10 @@
 package org.oreo.smore.domain.studyroom.dto;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
 import org.oreo.smore.domain.studyroom.StudyRoomCategory;
+import org.springframework.web.multipart.MultipartFile;
 
+@Data
 @Getter
 @Builder
 @NoArgsConstructor
@@ -20,6 +19,7 @@ public class CreateStudyRoomRequest {
     private StudyRoomCategory category;
     private Integer focusTime;
     private Integer breakTime;
+    private MultipartFile roomImage;
 
 
     // 비밀번호 있는지 확인

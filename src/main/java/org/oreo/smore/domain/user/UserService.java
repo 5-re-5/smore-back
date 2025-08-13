@@ -146,20 +146,27 @@ public class UserService {
                 endOfDay.plusDays(1)      // 자정 넘어가는 케이스도 포함
         );
 
-        int todayStudyMinutes = 0;
+        int todayStudySeconds = 0;
 
         for (StudyTime record : allRecords) {
             LocalDateTime start = record.getCreatedAt();
             LocalDateTime end = record.getDeletedAt();
+
+            if (end == null) {
+                // 아직 진행 중인 공부 세션은 현재 시간까지로 계산
+                end = LocalDateTime.now();
+            }
 
             // 오늘 날짜 범위와 겹치는 구간만 계산
             LocalDateTime effectiveStart = start.isBefore(startOfDay) ? startOfDay : start;
             LocalDateTime effectiveEnd = end.isAfter(endOfDay) ? endOfDay : end;
 
             if (!effectiveStart.isAfter(effectiveEnd)) {
-                todayStudyMinutes += Duration.between(effectiveStart, effectiveEnd).toMinutes();
+                todayStudySeconds += Duration.between(effectiveStart, effectiveEnd).getSeconds();
             }
         }
+
+        int todayStudyMinutes = todayStudySeconds / 60;
 
 
         return UserInfoResponse.builder()
