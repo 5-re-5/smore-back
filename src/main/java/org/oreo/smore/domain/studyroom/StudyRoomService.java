@@ -6,6 +6,7 @@ import jakarta.persistence.criteria.Root;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.oreo.smore.domain.chat.ChatRoomService;
+import org.oreo.smore.domain.chat.StudyRoomNotificationService;
 import org.oreo.smore.domain.participant.Participant;
 import org.oreo.smore.domain.participant.ParticipantRepository;
 import org.oreo.smore.domain.studyroom.dto.RecentStudyRoomsResponse;
@@ -36,6 +37,7 @@ public class StudyRoomService {
     private final ParticipantService participantService;
     private final LiveKitRoomService liveKitRoomService;
     private final ChatRoomService chatRoomService;
+    private final StudyRoomNotificationService notificationService;
 
     // TODO : N+1 문제 해결하기
     public CursorPage<StudyRoomInfoReadResponse> listStudyRooms(
@@ -233,6 +235,7 @@ public class StudyRoomService {
                 log.warn("⚠️ 다른 참가자 {}명이 강제 퇴장됨 - 방ID: {}", participantCount - 1, roomId);
 
                 // TODO: WebSocket으로 다른 참가자들에게 방 삭제 알림
+                notificationService.notifyRoomDeleted(roomId, "OWNER_LEFT");
             }
 
             // 모든 참가 이력 삭제

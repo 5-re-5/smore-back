@@ -55,7 +55,8 @@ public class ChatController {
                     .build();
 
             // 모든 클라이언트에게 브로드캐스트
-            messagingTemplate.convertAndSend("/topic/chat/broadcast", broadcastMessage);
+            String destination = "/topic/study-rooms/" + savedMessage.getRoomId() + "/chat";
+            messagingTemplate.convertAndSend(destination, broadcastMessage);
 
             log.info("✅ 메시지 브로드캐스트 완료 - 사용자: {}, 룸ID: {}",
                     user.getNickname(), request.getRoomId());
@@ -113,7 +114,8 @@ public class ChatController {
                     .broadcastType("USER_JOIN")
                     .build();
 
-            messagingTemplate.convertAndSend("/topic/chat/broadcast", joinMessage);
+            String destination = "/topic/study-rooms/" + savedJoinMessage.getRoomId() + "/chat";
+            messagingTemplate.convertAndSend(destination, joinMessage);
 
             log.info("✅ 입장 알림 브로드캐스트 완료 - 사용자: {}", user.getNickname());
 
@@ -156,7 +158,8 @@ public class ChatController {
                     .broadcastType("USER_LEAVE")
                     .build();
 
-            messagingTemplate.convertAndSend("/topic/chat/broadcast", leaveMessage);
+            String destination = "/topic/study-rooms/" + savedLeaveMessage.getRoomId() + "/chat";
+            messagingTemplate.convertAndSend(destination, leaveMessage);
 
             log.info("✅ 퇴장 알림 브로드캐스트 완료 - 사용자: {}", user.getNickname());
 
