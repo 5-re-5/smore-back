@@ -159,7 +159,7 @@ public class FocusRecordService {
                 .average()
                 .orElse(0.0);
 
-        return (int) Math.round(averageSegments * MINUTES_PER_SEGMENT / 60.0);
+        return (int) Math.round(averageSegments * MINUTES_PER_SEGMENT);
     }
 
     private String generateFeedback(
