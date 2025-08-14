@@ -1,7 +1,6 @@
 package org.oreo.smore.domain.webhook;
 
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.oreo.smore.domain.participant.Participant;
 import org.oreo.smore.domain.participant.ParticipantRepository;
 import org.oreo.smore.domain.studyroom.StudyRoom;
@@ -15,7 +14,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.Optional;
 
-@Slf4j
 @Service
 @RequiredArgsConstructor
 public class WebhookService {
@@ -37,39 +35,23 @@ public class WebhookService {
 
         Long roomId = roomOpt.get().getRoomId();
         Long userId = userOpt.get().getUserId();
-        boolean isOwner = roomOpt.get().getUserId().equals(userId);
 
-        log.info("LiveKit participant_left 웹훅 - 방ID: {}, 사용자ID: {}, 방장여부: {}",
-                roomId, userId, isOwner);
 
-        // 핵심: 이미 나간 상태면 중복 이벤트로 판단 (새로고침 가능성)
-        List<Participant> activeParticipants = participantRepository.findAllByRoomIdAndUserIdAndLeftAtIsNull(roomId, userId);
-        if (activeParticipants.isEmpty()) {
-            log.info("✅ 이미 나간 참가자 - 중복 이벤트로 무시 - 방ID: {}, 사용자ID: {}",
-                    roomId, userId);
-            return 0; // 이미 처리됨 - 새로고침으로 판단
+        if (roomOpt.get().getUserId().equals(userId)) {
+            studyRoomService.deleteStudyRoom(roomId, userId);
+            return 1;
         }
 
-        // 실제 나가기 처리
-        if (isOwner) {
-            // 방장 나가기 → 방 삭제
-            log.warn("방장 나가기 - 방 삭제 처리 - 방ID: {}, 방장ID: {}", roomId, userId);
-            try {
-                studyRoomService.deleteStudyRoomByOwnerLeave(roomId, userId);
-                return 1;
-            } catch (Exception e) {
-                log.error("❌ 방 삭제 실패 - 방ID: {}, 방장ID: {}, 오류: {}", roomId, userId, e.getMessage());
-                return 0;
-            }
-        } else {
-            // 일반 참가자 나가기
-            for (Participant p : activeParticipants) {
-                p.leave();
-            }
-            participantRepository.saveAll(activeParticipants);
 
-            log.info("✅ 일반 참가자 나가기 완료 - 방ID: {}, 사용자ID: {}", roomId, userId);
-            return 0;
+        List<Participant> targets =
+                participantRepository.findAllByRoomIdAndUserIdAndLeftAtIsNull(roomId, userId);
+
+        if (targets.isEmpty()) return 0;
+
+        for (Participant p : targets) {
+            p.leave();
         }
+        participantRepository.saveAll(targets);
+        return 0;
     }
 }
