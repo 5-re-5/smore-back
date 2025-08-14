@@ -36,12 +36,25 @@ public class WebhookService {
         Long roomId = roomOpt.get().getRoomId();
         Long userId = userOpt.get().getUserId();
 
-
         if (roomOpt.get().getUserId().equals(userId)) {
             studyRoomService.deleteStudyRoom(roomId, userId);
+
+            List<Participant> remainings =
+                    participantRepository.findAllByRoomIdAndLeftAtIsNull(roomId);
+            for (Participant p : remainings) {
+                p.leave(); // 내부에서 leftAt = LocalDateTime.now()
+            }
+            participantRepository.saveAll(remainings);
+
+            List<Participant> targets =
+                    participantRepository.findAllByRoomIdAndUserIdAndLeftAtIsNull(roomId, userId);
+            for (Participant p : targets) {
+                p.leave();
+            }
+            participantRepository.saveAll(targets);
+
             return 1;
         }
-
 
         List<Participant> targets =
                 participantRepository.findAllByRoomIdAndUserIdAndLeftAtIsNull(roomId, userId);
