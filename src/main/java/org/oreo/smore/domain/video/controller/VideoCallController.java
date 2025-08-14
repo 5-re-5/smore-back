@@ -56,15 +56,6 @@ public class VideoCallController {
         // 인증 검증
         validateAuthentication(authentication, userId);
 
-        // 리퍼러 검증
-        if (!isValidReferer(httpRequest)) {
-            log.error("❌ 직접 URL 접근 차단 - 방ID: {}, 사용자ID: {}, Referer: {}",
-                    roomId, userId, httpRequest.getHeader("Referer"));
-
-            // 그냥 빈 응답으로 403 반환 (타입 에러 없음)
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
-        }
-
         // User 테이블에서 nickname 가져오기
         String userNickname = userIdentityService.generateIdentityForUser(userId);
 
@@ -166,27 +157,6 @@ public class VideoCallController {
 
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
-    }
-
-    private boolean isValidReferer(HttpServletRequest request) {
-        String referer = request.getHeader("Referer");
-
-        if (referer == null || referer.trim().isEmpty()) {
-            log.warn("리퍼러 없음 - 직접 URL 접근 가능성");
-            return false;
-        }
-
-        // 허용된 페이지들 - 실제 프론트엔드 경로에 맞게 수정하세요
-        List<String> allowedPaths = Arrays.asList(
-                "/study-rooms",     // 방 목록 페이지
-                "/room-detail",     // 방 상세 페이지
-                "/recent-rooms"
-        );
-
-        boolean isValid = allowedPaths.stream().anyMatch(referer::contains);
-
-        log.debug("리퍼러 검증 결과 - Referer: {}, Valid: {}", referer, isValid);
-        return isValid;
     }
 
     @PostMapping("/{roomId}/rejoin")
