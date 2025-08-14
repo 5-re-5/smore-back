@@ -180,43 +180,46 @@ public class VideoCallController {
 
             // 2.  방장인 경우 특별 처리 (권한 검증 없이 무조건 성공)
             if (isOwner) {
-                log.info("👑 REJOIN - 방장 재입장 처리 시작 - 방ID: {}, 방장ID: {}", roomId, userId);
 
-                // 방장이 참가자 목록에 없다면 자동으로 추가 (데이터 정합성 보장)
-                boolean isInRoom = participantService.isUserInRoom(roomId, userId);
-                if (!isInRoom) {
-                    try {
-                        log.info("REJOIN - 방장을 참가자 목록에 재등록 - 방ID: {}, 방장ID: {}", roomId, userId);
-                        participantService.joinRoom(roomId, userId);
-                        log.info("REJOIN - 방장 참가자 재등록 완료 - 방ID: {}, 방장ID: {}", roomId, userId);
-                    } catch (Exception e) {
-                        log.warn("⚠REJOIN - 방장 참가자 재등록 실패하지만 계속 진행 - 방ID: {}, 방장ID: {}, 오류: {}",
-                                roomId, userId, e.getMessage());
-                    }
-                }
-
-                studyRoomValidator.logRoomInfo(studyRoom);
-
-                // LiveKit 방ID 확보
-                String liveKitRoomName = ensureLiveKitRoom(studyRoom);
-                if (liveKitRoomName == null || liveKitRoomName.trim().isEmpty()) {
-                    log.error("❌ LiveKit 방 ID가 없습니다 - 방ID: {}", roomId);
-                    throw new IllegalStateException("LiveKit 방 정보가 올바르지 않습니다.");
-                }
-
-                // 방장은 권한 검증 없이 바로 토큰 발급
-                TokenRequest tokenRequest = TokenRequest.builder()
-                        .roomName(liveKitRoomName)
-                        .identity(userNickname)
-                        .canPublish(request.getCanPublish())
-                        .canSubscribe(request.getCanSubscribe())
-                        .tokenExpirySeconds(request.getTokenExpirySeconds())
-                        .build();
-
-                TokenResponse tokenResponse = tokenService.generateToken(tokenRequest);
-                log.info("✅ 방장 재입장 성공 - DB방ID: {}, LiveKit방: [{}], 방장: [{}]", roomId, liveKitRoomName, userNickname);
-
-                return ResponseEntity.ok(tokenResponse);
+                return ResponseEntity.status(HttpStatus.NOT_ACCEPTABLE).build();
+                // TODO : 새로 고침 추가 하기
+//                log.info("👑 REJOIN - 방장 재입장 처리 시작 - 방ID: {}, 방장ID: {}", roomId, userId);
+//
+//                // 방장이 참가자 목록에 없다면 자동으로 추가 (데이터 정합성 보장)
+//                boolean isInRoom = participantService.isUserInRoom(roomId, userId);
+//                if (!isInRoom) {
+//                    try {
+//                        log.info("REJOIN - 방장을 참가자 목록에 재등록 - 방ID: {}, 방장ID: {}", roomId, userId);
+//                        participantService.joinRoom(roomId, userId);
+//                        log.info("REJOIN - 방장 참가자 재등록 완료 - 방ID: {}, 방장ID: {}", roomId, userId);
+//                    } catch (Exception e) {
+//                        log.warn("⚠REJOIN - 방장 참가자 재등록 실패하지만 계속 진행 - 방ID: {}, 방장ID: {}, 오류: {}",
+//                                roomId, userId, e.getMessage());
+//                    }
+//                }
+//
+//                studyRoomValidator.logRoomInfo(studyRoom);
+//
+//                // LiveKit 방ID 확보
+//                String liveKitRoomName = ensureLiveKitRoom(studyRoom);
+//                if (liveKitRoomName == null || liveKitRoomName.trim().isEmpty()) {
+//                    log.error("❌ LiveKit 방 ID가 없습니다 - 방ID: {}", roomId);
+//                    throw new IllegalStateException("LiveKit 방 정보가 올바르지 않습니다.");
+//                }
+//
+//                // 방장은 권한 검증 없이 바로 토큰 발급
+//                TokenRequest tokenRequest = TokenRequest.builder()
+//                        .roomName(liveKitRoomName)
+//                        .identity(userNickname)
+//                        .canPublish(request.getCanPublish())
+//                        .canSubscribe(request.getCanSubscribe())
+//                        .tokenExpirySeconds(request.getTokenExpirySeconds())
+//                        .build();
+//
+//                TokenResponse tokenResponse = tokenService.generateToken(tokenRequest);
+//                log.info("✅ 방장 재입장 성공 - DB방ID: {}, LiveKit방: [{}], 방장: [{}]", roomId, liveKitRoomName, userNickname);
+//
+//                return ResponseEntity.ok(tokenResponse);
             }
 
             // 3. 일반 참가자 처리 (기존 로직 유지)
