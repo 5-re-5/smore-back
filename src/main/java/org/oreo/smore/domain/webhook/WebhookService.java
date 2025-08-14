@@ -36,10 +36,12 @@ public class WebhookService {
         Long roomId = roomOpt.get().getRoomId();
         Long userId = userOpt.get().getUserId();
 
+
 //        if (roomOpt.get().getUserId().equals(userId)) {
 //            studyRoomService.deleteStudyRoom(roomId, userId);
 //            return 1;
 //        }
+
 
         List<Participant> targets =
                 participantRepository.findAllByRoomIdAndUserIdAndLeftAtIsNull(roomId, userId);
