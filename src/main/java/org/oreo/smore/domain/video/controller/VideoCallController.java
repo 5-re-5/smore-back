@@ -313,7 +313,7 @@ public class VideoCallController {
                 log.warn("✅ 방장 퇴장으로 방 삭제 완료 - 방ID: {}, 방장ID: {}", roomId, userId);
             } else {
                 // 일반 참가자 퇴장
-                participantService.leaveRoom(roomId, userId);
+//                participantService.leaveRoom(roomId, userId);
 
                 // 남은 참가자 수 확인
                 long remainingCount = participantService.getActiveParticipantCount(roomId);
