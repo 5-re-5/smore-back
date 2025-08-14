@@ -42,4 +42,6 @@ public interface ParticipantRepository extends JpaRepository<Participant, Long> 
 
     List<Participant> findAllByRoomIdAndUserIdAndLeftAtIsNull(Long roomId, Long userId);
 
+    List<Participant> findAllByRoomIdAndLeftAtIsNull(Long roomId);
+
 }
