@@ -1,14 +1,27 @@
-# Java 21 기반 이미지 사용 (Alpine 기반으로 작고 빠름)
-FROM openjdk:21-jdk-slim
+# 1. Build Stage
+FROM eclipse-temurin:21-jdk AS build
 
-# 작업 디렉토리 설정
 WORKDIR /app
 
-# JAR 파일 복사 (Gradle 빌드 결과물)
-COPY build/libs/*.jar app.jar
+# 프로젝트 전체 복사
+COPY . .
 
-# 컨테이너 시작 시 실행할 명령
-ENTRYPOINT ["sh", "-c", "java -jar app.jar"]
+# gradlew 실행 권한 부여
+RUN chmod +x ./gradlew
 
-# 애플리케이션 포트 (필요 시 변경)
+# Gradle 빌드
+RUN ./gradlew clean bootJar --no-daemon
+
+# 2. Run Stage
+FROM eclipse-temurin:21-jdk
+
+WORKDIR /app
+
+# Build stage에서 생성된 JAR 복사
+COPY --from=build /app/build/libs/*.jar app.jar
+
+# Spring Boot 기본 포트
 EXPOSE 8080
+
+# 앱 실행
+ENTRYPOINT ["java","-jar","app.jar"]
