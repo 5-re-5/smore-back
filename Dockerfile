@@ -11,4 +11,4 @@ COPY build/libs/*.jar app.jar
 ENTRYPOINT ["sh", "-c", "java -jar app.jar"]
 
 # 애플리케이션 포트 (필요 시 변경)
-EXPOSE 8081
+EXPOSE 8080
