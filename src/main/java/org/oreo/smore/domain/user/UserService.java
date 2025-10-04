@@ -41,7 +41,7 @@ public class UserService {
                 .name(name)
                 .email(email)
                 .nickname(UUID.randomUUID().toString())
-                .profileUrl("https://oreost.blob.core.windows.net/oreos/default/user.png?t=202508130152")
+                .profileUrl("https://oreost.blob.core.windows.net/oreoct/default/user.webp?t=202508130152")
                 .createdAt(LocalDateTime.now())
                 .goalStudyTime(60)
                 .level("O")
