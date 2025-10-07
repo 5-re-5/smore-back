@@ -128,6 +128,9 @@ public class FocusFeedbackService {
         } catch (WebClientResponseException e) {
             log.error("GMS 호출 실패: {} / {}", e.getRawStatusCode(), e.getResponseBodyAsString());
             return getRandomDefaultFeedback();
+        } catch (Exception e) { // GMS 키 만료돼서 다 기본 피드백으로 바꿈
+            log.error("GMS 호출 중 예외 발생: {}", e.getMessage());
+            return getRandomDefaultFeedback();
         }
 
         return resp.path("choices")

@@ -165,7 +165,9 @@ public class FocusRecordService {
     private String generateFeedback(
             FocusTimeDto best, FocusTimeDto worst,
             int avgDuration, FocusTrackDto track) {
-        return focusFeedbackService.generateOneLineFeedback(best, worst, avgDuration, track);
+        // return focusFeedbackService.generateOneLineFeedback(best, worst, avgDuration, track);
+        // 임시: 기본 피드백 직접 반환
+        return "훌륭해요! 꾸준히 이어가면 분명 좋은 결과가 있을 거예요😊";
     }
 
     private record HourlyStats(
