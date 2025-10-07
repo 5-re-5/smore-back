@@ -64,6 +64,25 @@ logging:
   level:
     io.livekit: DEBUG
     org.oreo.smore: DEBUG
+
+# 성능 측정 설정 (Prometheus + Grafana)
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus,metrics
+      base-path: /actuator
+  metrics:
+    tags:
+      application: ${spring.application.name}
+      version: before
+    distribution:
+      percentiles-histogram:
+        "[http.server.requests]": true
+  prometheus:
+    metrics:
+      export:
+        enabled: true
 ---
 
 # ??? ??

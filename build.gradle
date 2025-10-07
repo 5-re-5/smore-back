@@ -44,6 +44,9 @@ dependencies {
     implementation 'com.azure:azure-storage-blob:12.25.0'
     // websocket
     implementation 'org.springframework.boot:spring-boot-starter-websocket'
+    // 성능 측정용
+    implementation 'org.springframework.boot:spring-boot-starter-actuator'
+    implementation 'io.micrometer:micrometer-registry-prometheus'
 
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
     implementation 'org.springframework.boot:spring-boot-starter-oauth2-client'
