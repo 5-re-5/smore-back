@@ -44,4 +44,11 @@ public interface ParticipantRepository extends JpaRepository<Participant, Long> 
 
     List<Participant> findAllByRoomIdAndLeftAtIsNull(Long roomId);
 
+    // 여러 방의 참가자 수를 한 번의 쿼리로 가져옴
+    @Query("SELECT p.roomId, COUNT(p) FROM Participant p " +
+            "WHERE p.roomId IN :roomIds " +
+            "AND p.leftAt IS NULL " +
+            "AND p.isBanned = false " +
+            "GROUP BY p.roomId")
+    List<Object[]> countActiveParticipantsByRoomIds(@Param("roomIds") List<Long> roomIds);
 }
