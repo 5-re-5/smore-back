@@ -1,5 +1,6 @@
 package org.oreo.smore.global.config;
 
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.jsontype.BasicPolymorphicTypeValidator;
@@ -92,20 +93,18 @@ public class RedisConfig {
     private ObjectMapper createTypeAwareObjectMapper() {
         ObjectMapper objectMapper = new ObjectMapper();
 
-        // JSR310 모듈 등록 (LocalDateTime 등 Java 8 시간 타입 지원)
+        // JSR310 모듈 등록
         objectMapper.registerModule(new JavaTimeModule());
-
-        // 날짜를 timestamp가 아닌 ISO 형식으로 직렬화
         objectMapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
 
-        // ✅ 타입 정보 활성화 - 이게 핵심!
         PolymorphicTypeValidator ptv = BasicPolymorphicTypeValidator.builder()
-                .allowIfSubType(Object.class)  // 모든 타입 허용
+                .allowIfSubType(Object.class)
                 .build();
 
         objectMapper.activateDefaultTyping(
                 ptv,
-                ObjectMapper.DefaultTyping.NON_FINAL  // final이 아닌 모든 타입에 @class 추가
+                ObjectMapper.DefaultTyping.NON_FINAL,
+                JsonTypeInfo.As.PROPERTY
         );
 
         return objectMapper;

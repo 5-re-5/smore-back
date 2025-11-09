@@ -9,6 +9,8 @@ import org.oreo.smore.domain.user.dto.request.UserUpdateRequest;
 import org.oreo.smore.domain.user.dto.response.UserInfoResponse;
 import org.oreo.smore.domain.user.dto.response.UserUpdateResponse;
 import org.oreo.smore.global.common.CloudStorageManager;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -70,6 +72,7 @@ public class UserService {
                 .orElseThrow(() -> new RuntimeException("User not found: " + email));
     }
 
+    @CacheEvict(value = "user:profile", key = "#userId")
     @Transactional
     public UserUpdateResponse updateUser(Long userId, UserUpdateRequest req) {
         User user = repository.findById(userId)
@@ -146,6 +149,7 @@ public class UserService {
     }
 
 
+    @Cacheable(value = "user:profile", key = "#userId")
     @Transactional(readOnly = true)
     public UserInfoResponse getUserInfo(Long userId) {
         User user = repository.findById(userId)

@@ -1,10 +1,13 @@
 package org.oreo.smore.domain.point;
 
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.oreo.smore.domain.point.dto.response.TotalPointsResponse;
 import org.oreo.smore.domain.point.dto.response.OreoDrawResponse;
 import org.oreo.smore.domain.user.User;
 import org.oreo.smore.domain.user.UserRepository;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -19,11 +22,13 @@ public class PointService {
     private final PointRepository pointRepository;
     private final UserRepository userRepository;
 
+    @Cacheable(value = "user:totalPoints", key = "#userId")
     @Transactional(readOnly = true)
     public TotalPointsResponse getTotalPoints(Long userId) {
         return new TotalPointsResponse(pointRepository.sumDeltaByUserId(userId));
     }
 
+    @CacheEvict(value = "user:totalPoints", key = "#userId")
     @Transactional
     public OreoDrawResponse drawOreo(Long userId) {
         long totalPoints = pointRepository.sumDeltaByUserId(userId);
