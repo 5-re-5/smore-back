@@ -79,6 +79,12 @@ public class StudyRoomService {
             String category,
             Pageable pageable
     ) {
+        if ((search == null || search.isBlank()) &&
+                (category == null || category.isBlank())) {
+            // 필터 없을 때는 Fetch Join 사용
+            return roomRepository.findAllWithUserFetchJoin(cursor, pageable);
+        }
+
         Specification<StudyRoom> spec = (root, query, cb) -> {
             List<Predicate> predicates = new ArrayList<>();
             predicates.add(cb.isNull(root.get("deletedAt")));
@@ -132,12 +138,18 @@ public class StudyRoomService {
 
     private StudyRoomInfoReadResponse toDto(StudyRoom room) {
         long count = participantRepository.countByRoomIdAndLeftAtIsNull(room.getRoomId());
-        User creator = userRepo.findById(room.getUserId())
-                .orElseThrow(() -> new ResponseStatusException(
-                        HttpStatus.NOT_FOUND,
-                        "Creator not found: " + room.getUserId()
-                ));
-        return StudyRoomInfoReadResponse.of(room, count, creator.getNickname());
+
+        String creatorNickname = room.getUser() != null
+                ? room.getUser().getNickname()
+                : "Unknown";
+
+        return StudyRoomInfoReadResponse.of(room, count, creatorNickname);
+//        User creator = userRepo.findById(room.getUserId())
+//                .orElseThrow(() -> new ResponseStatusException(
+//                        HttpStatus.NOT_FOUND,
+//                        "Creator not found: " + room.getUserId()
+//                ));
+//        return StudyRoomInfoReadResponse.of(room, count, creator.getNickname());
     }
 
     private void applyPopularSort(List<StudyRoomInfoReadResponse> dtos) {

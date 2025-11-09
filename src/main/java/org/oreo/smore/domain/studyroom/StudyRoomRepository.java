@@ -4,6 +4,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import java.util.List;
 import java.util.Optional;
@@ -23,4 +25,14 @@ public interface StudyRoomRepository extends JpaRepository<StudyRoom, Long> {
     Slice<StudyRoom> findAll(Specification<StudyRoom> spec, Pageable pageable);
 
     Optional<StudyRoom> findByLiveKitRoomId(String liveKitRoomId);
+
+    @Query("SELECT DISTINCT sr FROM StudyRoom sr " +
+            "LEFT JOIN FETCH sr.user " +
+            "WHERE sr.deletedAt IS NULL " +
+            "AND sr.roomId < :cursor " +
+            "ORDER BY sr.roomId DESC")
+    List<StudyRoom> findAllWithUserFetchJoin(
+            @Param("cursor") Long cursor,
+            Pageable pageable
+    );
 }

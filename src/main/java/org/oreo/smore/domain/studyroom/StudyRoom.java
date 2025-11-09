@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.oreo.smore.domain.chat.ChatRoom;
+import org.oreo.smore.domain.user.User;
 
 import java.time.LocalDateTime;
 
@@ -21,6 +22,10 @@ public class StudyRoom {
 
     @Column(name = "user_id", nullable = false)
     private Long userId;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", insertable = false, updatable = false)
+    private User user;
 
     @Column(nullable = false)
     private String title;
