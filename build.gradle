@@ -26,6 +26,7 @@ repositories {
 dependencies {
     // LiveKit Server SDK
     implementation 'io.livekit:livekit-server:0.10.0'
+
     // Retrofit
     implementation 'com.squareup.retrofit2:retrofit:2.9.0'
     implementation 'com.squareup.retrofit2:converter-gson:2.9.0'
@@ -35,18 +36,27 @@ dependencies {
     implementation 'io.grpc:grpc-netty-shaded:1.58.0'
     implementation 'io.grpc:grpc-protobuf:1.58.0'
     implementation 'io.grpc:grpc-stub:1.58.0'
+
     // JSON 처리
     implementation 'com.fasterxml.jackson.core:jackson-databind'
     implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310'
+
     // DTO 검증
     implementation 'org.springframework.boot:spring-boot-starter-validation'
+
     // Azure Blob Storage
     implementation 'com.azure:azure-storage-blob:12.25.0'
+
     // websocket
     implementation 'org.springframework.boot:spring-boot-starter-websocket'
+
     // 성능 측정용
     implementation 'org.springframework.boot:spring-boot-starter-actuator'
     implementation 'io.micrometer:micrometer-registry-prometheus'
+
+    // Redis 캐싱
+    implementation 'org.springframework.boot:spring-boot-starter-data-redis'
+    implementation 'org.springframework.boot:spring-boot-starter-cache'
 
     runtimeOnly 'io.prometheus:prometheus-metrics-core'
     runtimeOnly 'io.prometheus:prometheus-metrics-exposition-formats'

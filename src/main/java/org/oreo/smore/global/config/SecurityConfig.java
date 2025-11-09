@@ -46,7 +46,10 @@ public class SecurityConfig {
                                 "/actuator/**",
                                 // 테스트 기간 동안만 추가
                                 "/v1/study-rooms/**",
-                                "/v1/focus-records/**"
+                                "/v1/focus-records/**",
+                                "/v1/users/**",
+                                "/v1/points/**",
+                                "/v1/study-times/**"
                         ).permitAll()
                         .anyRequest().authenticated()
                 )
