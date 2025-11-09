@@ -2,6 +2,8 @@ package org.oreo.smore.global.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.databind.jsontype.BasicPolymorphicTypeValidator;
+import com.fasterxml.jackson.databind.jsontype.PolymorphicTypeValidator;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.EnableCaching;
@@ -29,12 +31,8 @@ public class RedisConfig {
         RedisTemplate<String, Object> template = new RedisTemplate<>();
         template.setConnectionFactory(connectionFactory);
 
-        // ObjectMapper 설정
-        ObjectMapper objectMapper = new ObjectMapper();
-        objectMapper.registerModule(new JavaTimeModule());
-        objectMapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
-
-        // JSON 직렬화 설정
+        // 타입 정보를 포함한 ObjectMapper 설정
+        ObjectMapper objectMapper = createTypeAwareObjectMapper();
         GenericJackson2JsonRedisSerializer serializer =
                 new GenericJackson2JsonRedisSerializer(objectMapper);
 
@@ -51,10 +49,8 @@ public class RedisConfig {
     // 2. CacheManager 설정
     @Bean
     public CacheManager cacheManager(RedisConnectionFactory connectionFactory) {
-        ObjectMapper objectMapper = new ObjectMapper();
-        objectMapper.registerModule(new JavaTimeModule());
-        objectMapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
-
+        // ✅ 타입 정보를 포함한 ObjectMapper 설정
+        ObjectMapper objectMapper = createTypeAwareObjectMapper();
         GenericJackson2JsonRedisSerializer serializer =
                 new GenericJackson2JsonRedisSerializer(objectMapper);
 
@@ -69,7 +65,6 @@ public class RedisConfig {
                 .disableCachingNullValues();
 
         // 캐시별 개별 TTL 설정
-
         Map<String, RedisCacheConfiguration> cacheConfigurations = new HashMap<>();
 
         // 사용자 프로필 (10분)
@@ -91,5 +86,28 @@ public class RedisConfig {
                 .cacheDefaults(defaultConfig)
                 .withInitialCacheConfigurations(cacheConfigurations)
                 .build();
+    }
+
+    // 타입 정보를 포함하는 ObjectMapper 생성
+    private ObjectMapper createTypeAwareObjectMapper() {
+        ObjectMapper objectMapper = new ObjectMapper();
+
+        // JSR310 모듈 등록 (LocalDateTime 등 Java 8 시간 타입 지원)
+        objectMapper.registerModule(new JavaTimeModule());
+
+        // 날짜를 timestamp가 아닌 ISO 형식으로 직렬화
+        objectMapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+
+        // ✅ 타입 정보 활성화 - 이게 핵심!
+        PolymorphicTypeValidator ptv = BasicPolymorphicTypeValidator.builder()
+                .allowIfSubType(Object.class)  // 모든 타입 허용
+                .build();
+
+        objectMapper.activateDefaultTyping(
+                ptv,
+                ObjectMapper.DefaultTyping.NON_FINAL  // final이 아닌 모든 타입에 @class 추가
+        );
+
+        return objectMapper;
     }
 }

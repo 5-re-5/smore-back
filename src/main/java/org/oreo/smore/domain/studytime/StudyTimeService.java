@@ -2,6 +2,8 @@ package org.oreo.smore.domain.studytime;
 
 import lombok.RequiredArgsConstructor;
 import org.oreo.smore.domain.studytime.dto.response.StudyTimeStatisticsResponse;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 import java.time.DayOfWeek;
@@ -21,6 +23,7 @@ public class StudyTimeService {
     /**
      * 공부 시작
      */
+    @CacheEvict(value = "study:stats", key = "#userId")
     public void startStudyTime(Long userId) {
         StudyTime studyTime = StudyTime.builder()
                 .userId(userId)
@@ -31,6 +34,7 @@ public class StudyTimeService {
         studyTimeRepository.save(studyTime);
     }
 
+    @CacheEvict(value = "study:stats", key = "#userId")
     public void updateStudyTime(Long userId) {
         StudyTime latestStudyTime = studyTimeRepository.findTopByUserIdOrderByCreatedAtDesc(userId)
                 .orElseThrow(() -> new IllegalArgumentException("해당 사용자의 공부 기록이 없습니다."));
@@ -39,6 +43,7 @@ public class StudyTimeService {
         studyTimeRepository.save(latestStudyTime);
     }
 
+    @Cacheable(value = "study:stats", key = "#userId")
     public StudyTimeStatisticsResponse getStatistics(Long userId) {
         LocalDate today = LocalDate.now();
         LocalDate oneYearAgo = today.minusYears(1);
