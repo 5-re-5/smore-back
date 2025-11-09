@@ -18,7 +18,10 @@ public class PointController {
 
     @GetMapping("/v1/points/{userId}")
     public ResponseEntity<TotalPointsResponse> getTotalPoints(@PathVariable Long userId, Authentication authentication) {
-        if (Long.parseLong(authentication.getPrincipal().toString()) != userId) {
+//        if (Long.parseLong(authentication.getPrincipal().toString()) != userId) {
+//            return new ResponseEntity<>(HttpStatus.FORBIDDEN); // userId가 다르면 403
+//        }
+        if (authentication != null && Long.parseLong(authentication.getPrincipal().toString()) != userId) {
             return new ResponseEntity<>(HttpStatus.FORBIDDEN); // userId가 다르면 403
         }
         return ResponseEntity.ok(pointService.getTotalPoints(userId));
@@ -26,7 +29,10 @@ public class PointController {
 
     @PostMapping("/v1/points/{userId}")
     public ResponseEntity<OreoDrawResponse> drawOreo(@PathVariable Long userId, Authentication authentication) {
-        if (Long.parseLong(authentication.getPrincipal().toString()) != userId) {
+//        if (Long.parseLong(authentication.getPrincipal().toString()) != userId) {
+//            return new ResponseEntity<>(HttpStatus.FORBIDDEN); // userId가 다르면 403
+//        }
+        if (authentication != null && Long.parseLong(authentication.getPrincipal().toString()) != userId) {
             return new ResponseEntity<>(HttpStatus.FORBIDDEN); // userId가 다르면 403
         }
         return ResponseEntity.ok(pointService.drawOreo(userId));

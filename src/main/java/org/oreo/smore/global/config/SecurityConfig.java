@@ -39,17 +39,18 @@ public class SecurityConfig {
                 )
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(
-                                "/v1/auth/**",                  // 자체 로그인/회원가입 API
-                                "/oauth2/authorization/**",     // OAuth2 로그인 진입점
-                                "/login/oauth2/code/**",         // OAuth2 콜백 엔드포인트
-                                "/v1/webhook/**",
-                                "/actuator/**",
-                                // 테스트 기간 동안만 추가
-                                "/v1/study-rooms/**",
-                                "/v1/focus-records/**",
-                                "/v1/users/**",
-                                "/v1/points/**",
-                                "/v1/study-times/**"
+//                                "/v1/auth/**",                  // 자체 로그인/회원가입 API
+//                                "/oauth2/authorization/**",     // OAuth2 로그인 진입점
+//                                "/login/oauth2/code/**",         // OAuth2 콜백 엔드포인트
+//                                "/v1/webhook/**",
+//                                "/actuator/**",
+//                                // 테스트 기간 동안만 추가
+//                                "/v1/study-rooms/**",
+//                                "/v1/focus-records/**",
+//                                "/v1/users/**",
+//                                "/v1/points/**",
+//                                "/v1/study-times/**"
+                                "/**"
                         ).permitAll()
                         .anyRequest().authenticated()
                 )

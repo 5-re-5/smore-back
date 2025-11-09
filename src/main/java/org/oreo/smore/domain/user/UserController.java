@@ -26,7 +26,10 @@ public class UserController {
             Authentication authentication,
             BindingResult bindingResult) throws Exception {
 
-        if (Long.parseLong(authentication.getPrincipal().toString()) != userId) {
+//        if (Long.parseLong(authentication.getPrincipal().toString()) != userId) {
+//            return new ResponseEntity<>(HttpStatus.FORBIDDEN); // userId가 다르면 403
+//        }
+        if (authentication != null && Long.parseLong(authentication.getPrincipal().toString()) != userId) {
             return new ResponseEntity<>(HttpStatus.FORBIDDEN); // userId가 다르면 403
         }
 
@@ -53,7 +56,10 @@ public class UserController {
             @PathVariable Long userId,
             Authentication authentication) {
 
-        if (Long.parseLong(authentication.getPrincipal().toString()) != userId) {
+//        if (Long.parseLong(authentication.getPrincipal().toString()) != userId) {
+//            return new ResponseEntity<>(HttpStatus.FORBIDDEN); // userId가 다르면 403
+//        }
+        if (authentication != null && Long.parseLong(authentication.getPrincipal().toString()) != userId) {
             return new ResponseEntity<>(HttpStatus.FORBIDDEN); // userId가 다르면 403
         }
 

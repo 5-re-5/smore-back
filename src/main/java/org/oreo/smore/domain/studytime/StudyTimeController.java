@@ -19,7 +19,10 @@ public class StudyTimeController {
      */
     @PostMapping("/v1/study-times/{userId}")
     public ResponseEntity<String> startStudyTime(@PathVariable Long userId, Authentication authentication) {
-        if (Long.parseLong(authentication.getPrincipal().toString()) != userId) {
+//        if (Long.parseLong(authentication.getPrincipal().toString()) != userId) {
+//            return new ResponseEntity<>(HttpStatus.FORBIDDEN); // userId가 다르면 403
+//        }
+        if (authentication != null && Long.parseLong(authentication.getPrincipal().toString()) != userId) {
             return new ResponseEntity<>(HttpStatus.FORBIDDEN); // userId가 다르면 403
         }
         studyTimeService.startStudyTime(userId);
@@ -28,7 +31,10 @@ public class StudyTimeController {
 
     @PatchMapping("/v1/study-times/{userId}")
     public ResponseEntity<String> updateStudyTime(@PathVariable Long userId, Authentication authentication) {
-        if (Long.parseLong(authentication.getPrincipal().toString()) != userId) {
+//        if (Long.parseLong(authentication.getPrincipal().toString()) != userId) {
+//            return new ResponseEntity<>(HttpStatus.FORBIDDEN); // userId가 다르면 403
+//        }
+        if (authentication != null && Long.parseLong(authentication.getPrincipal().toString()) != userId) {
             return new ResponseEntity<>(HttpStatus.FORBIDDEN); // userId가 다르면 403
         }
         studyTimeService.updateStudyTime(userId);
@@ -40,10 +46,12 @@ public class StudyTimeController {
             @PathVariable Long userId,
             Authentication authentication
     ) {
-        if (Long.parseLong(authentication.getPrincipal().toString()) != userId) {
+//        if (Long.parseLong(authentication.getPrincipal().toString()) != userId) {
+//            return new ResponseEntity<>(HttpStatus.FORBIDDEN); // userId가 다르면 403
+//        }
+        if (authentication != null && Long.parseLong(authentication.getPrincipal().toString()) != userId) {
             return new ResponseEntity<>(HttpStatus.FORBIDDEN); // userId가 다르면 403
         }
-
         return ResponseEntity.ok(studyTimeService.getStatistics(userId));
     }
 }

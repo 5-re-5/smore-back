@@ -17,14 +17,14 @@ public class FocusRecordController {
     @GetMapping("/{userId}")
     public ResponseEntity<Object> getFocusRecords(
             @PathVariable Long userId,
-            @RequestParam(name = "tz", required = false, defaultValue = "+09:00") String tzOffset
+            @RequestParam(name = "tz", required = false, defaultValue = "+09:00") String tzOffset,
+            Authentication authentication
     ) {
-        // 성능 테스트 기간 동안만 주석 처리
-        /*
-        if (Long.parseLong(authentication.getPrincipal().toString()) != userId) {
+        // 성능 테스트 시 인증 우회 (authentication이 null일 경우)
+        if (authentication != null && Long.parseLong(authentication.getPrincipal().toString()) != userId) {
             return new ResponseEntity<>(HttpStatus.FORBIDDEN); // userId가 다르면 403
         }
-        */
+
         FocusRecordsResponse response = focusRecordService.getFocusRecords(userId, tzOffset);
         return ResponseEntity.ok(response);
     }

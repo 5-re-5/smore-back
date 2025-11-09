@@ -77,7 +77,10 @@ public class StudyRoomController {
 
     @GetMapping("/{userId}/recent-study")
     public ResponseEntity<RecentStudyRoomsResponse> getRecentStudyRooms(@PathVariable Long userId, Authentication authentication) {
-        if (Long.parseLong(authentication.getPrincipal().toString()) != userId) {
+//        if (Long.parseLong(authentication.getPrincipal().toString()) != userId) {
+//            return new ResponseEntity<>(HttpStatus.FORBIDDEN); // userId가 다르면 403
+//        }
+        if (authentication != null && Long.parseLong(authentication.getPrincipal().toString()) != userId) {
             return new ResponseEntity<>(HttpStatus.FORBIDDEN); // userId가 다르면 403
         }
         return ResponseEntity.ok(studyRoomService.getRecentStudyRooms(userId));
